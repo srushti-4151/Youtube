@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, {Schema} from "mongoose";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 
@@ -10,7 +10,7 @@ const userSchema = new Schema(
             unique: true,
             lowercase: true,
             trim: true, 
-            index: true // make searchable easily
+            index: true
         },
         email: {
             type: String,
@@ -45,13 +45,13 @@ const userSchema = new Schema(
         refreshToken: {
             type: String
         }
+
     },
     {
         timestamps: true
     }
 )
 
-// hook is used to encrypt (hash) the user's password before saving the document to the MongoDB database
 userSchema.pre("save", async function (next) {
     if(!this.isModified("password")) return next();
 
@@ -59,7 +59,6 @@ userSchema.pre("save", async function (next) {
     next()
 })
 
-//method is object in schema and thats how we can add proprty(make custom methods) to that objct
 userSchema.methods.isPasswordCorrect = async function(password){
     return await bcrypt.compare(password, this.password)
 }
@@ -91,4 +90,4 @@ userSchema.methods.generateRefreshToken = function(){
     )
 }
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model("User", userSchema)
