@@ -25,8 +25,29 @@ const uploadOnCloudinary = async (localFilePath) => {
     fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
-    fs.unlinkSync(localFilePath); // remove locally savd temporry file as the upload operation failed
+    fs.unlinkSync(localFilePath); // remove locally saved temporry file as the upload operation failed
   }
 };
 
-export { uploadOnCloudinary };
+const deleteFromCloudinary = async (url) => {
+  try {
+    const publicId = url.split("/").pop().split(".")[0];
+    if (!publicId) {
+      throw new Error("Invalid Cloudinary URL: Unable to extract public ID");
+    }
+
+    // Delete the file from Cloudinary
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log("File deleted from Cloudinary:", result);
+
+    return result;
+  } catch (error) {
+    console.error("Cloudinary delete error:", error.message);
+    throw error;
+  }
+};
+
+export { 
+  uploadOnCloudinary,
+  deleteFromCloudinary
+};
