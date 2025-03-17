@@ -19,7 +19,7 @@ const Sidebar = () => {
   return (
     // <div className={`h-screen bg-black text-white transition-all duration-300 ${isOpen ? "w-60" : "w-16"}`}>
     <div
-      className={`hidden md:block h-screen bg-black text-white p-2 transition-all duration-300 border-r border-white ${
+      className={`hidden md:block h-screen bg-black text-white p-2 transition-all duration-300 ${
         isOpen ? "w-60" : "md:w-16 w-0 overflow-hidden"
       } fixed top-0 left-0 z-50 flex flex-col`}
     >
@@ -99,7 +99,7 @@ const SidebarItem = ({ to, icon, text, isOpen }) => (
       className={({ isActive }) =>
         `flex items-center ${
           isOpen ? "justify-start px-4" : "justify-center"
-        } py-2 hover:bg-gray-800 cursor-pointer border border-white w-full 
+        } py-2 hover:bg-gray-800 cursor-pointer w-full 
         ${isActive ? "bg-gray-800" : ""}`
       }
     >

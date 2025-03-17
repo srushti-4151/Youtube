@@ -13,54 +13,88 @@ const API_URL = "http://localhost:8000/api/v1/users";
 // Create an Axios Instance
 export const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // Ensure cookies are sent 
+  withCredentials: true, // Ensure cookies are sent
 });
 
-// Response Interceptor
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    // If refresh token request itself fails, log out user
+    if (originalRequest.url.includes("/refresh-token")) {
+      console.log("Refresh token failed, logging out...");
+      return Promise.reject(error);
+    }
+
+    // If token expired and request has not been retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const { store } = await import("../redux/store/Store.js");
-        const newToken = await store.dispatch(refreshAuthToken()).unwrap();
+        console.log("Token expired, refreshing token...");
+        const success = await refreshToken(); // Call refresh function
 
-        if (!newToken) {
-          return Promise.reject(error);
+        if (success) {
+          console.log("Token refreshed, retrying original request...");
+          return api(originalRequest); // Retry failed request
         }
 
-        // **Fix: Update Axios default headers**
-        api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
-        originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-
-        // Retry the original request
-        return api(originalRequest);
+        console.log("Token refresh failed, rejecting request...");
+        return Promise.reject(error);
       } catch (refreshError) {
+        console.log("Token refresh error:", refreshError);
         return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );
 
 
-//refresh token API
-export const refreshToken = async () => {
+// Get Current User
+export const getCurrentUser = async () => {
   try {
-    const response = await axios.get(`${API_URL}/refresh-token`, {
-      withCredentials: true, // Ensure cookies are sent
-    });
-
-    return response.data.accessToken; // Should return new access token
+    // const response = await axios.get(`${API_URL}/current-user`, {
+    //   withCredentials: true,
+    // });
+    const response = await api.get(`/current-user`);
+    console.log("Api getCurrentuser resposne", response.data);
+    return response.data;
   } catch (error) {
-    return null; // Token refresh failed
+    return null; // No user logged in
   }
 };
 
+//refresh token API
+// export const refreshToken = async () => {
+//   try {
+//     // const response = await axios.get(`${API_URL}/refresh-token`, {
+//     //   withCredentials: true, // Ensure cookies are sent
+//     // });
+//     const response = await api.get(`/refresh-token`);
+
+//     return response.data.accessToken; // Should return new access token
+//   } catch (error) {
+//     return null; // Token refresh failed
+//   }
+// };
+
+// Refresh Token Function
+export const refreshToken = async () => {
+  try {
+    const res = await api.post("/refresh-token");
+    const newAccessToken = res.data.data.accessToken;
+
+    // Update the Authorization header
+    api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+    return newAccessToken;
+  } catch (error) {
+    console.error("Refresh token request failed:", error);
+    return false;
+  }
+};
 
 // Login API
 export const login = async (userData) => {
@@ -103,17 +137,5 @@ export const logout = async () => {
       success: false,
       message: error.response?.data?.message || "An error occurred",
     };
-  }
-};
-
-// Get Current User
-export const getCurrentUser = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/current-user`, {
-      withCredentials: true,
-    });
-    return response.data;
-  } catch (error) {
-    return null; // No user logged in
   }
 };

@@ -54,20 +54,18 @@ import {
   logout,
   getCurrentUser,
   refreshToken,
-} from "../../api/AuthApi";
+} from "../../api/AuthApi.js";
 
 export const refreshAuthToken = createAsyncThunk(
   "auth/refreshToken",
   async (_, thunkAPI) => {
     try {
+      console.log("caling the refreshAuthToken :");
       const newToken = await refreshToken(); // Call API to refresh
 
       if (!newToken) {
         return thunkAPI.rejectWithValue("Token refresh failed");
       }
-
-      // Import API instance inside function to avoid circular dependencies
-      const { default: api } = await import("../../api/AuthApi.js");
 
       // Set new token for future requests
       api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
@@ -110,18 +108,21 @@ export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
   async (_, thunkAPI) => {
     try {
+      console.log("Fetching current user...");
       const response = await getCurrentUser();
-      console.log("get user current :", response);
+      console.log("Current user response:", response);
       if (response) return response;
     } catch (error) {
       if (error.response?.status === 401) {
+        console.log("Token expired, attempting to refresh...");
         try {
-          // **Fix: Ensure token is refreshed before retrying**
           const newToken = await thunkAPI.dispatch(refreshAuthToken()).unwrap();
           if (newToken) {
+            console.log("Token refreshed, retrying fetchCurrentUser...");
             return await getCurrentUser(); // Retry fetching user
           }
         } catch (refreshError) {
+          console.log("Token refresh failed:", refreshError);
           return thunkAPI.rejectWithValue("Token refresh failed");
         }
       }
@@ -157,9 +158,9 @@ const authSlice = createSlice({
         state.isLoading = false;
 
         // **Fix: Ensure token is set globally in Axios**
-        api.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${action.payload.data.accessToken}`;
+        // api.defaults.headers.common[
+        //   "Authorization"
+        // ] = `Bearer ${action.payload.data.accessToken}`;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isAuthenticated = false;
@@ -174,7 +175,11 @@ const authSlice = createSlice({
         state.token = action.payload;
         state.isAuthenticated = true;
         state.error = null;
+      
+        // **Fix: Ensure token is updated globally**
+        // api.defaults.headers.common["Authorization"] = `Bearer ${action.payload}`;
       })
+      
       .addCase(refreshAuthToken.rejected, (state) => {
         state.isAuthenticated = false;
         state.user = null;

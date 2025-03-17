@@ -24,7 +24,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="hidden md:flex fixed top-0 left-0 w-full bg-black text-white items-center justify-between py-1 px-7 shadow-md z-50 border-b border-white">
+      <nav className="hidden md:flex fixed top-0 left-0 w-full bg-black text-white items-center justify-between py-1 px-7 shadow-md z-50">
         {/* Left - Logo & Menu */}
         <div className="flex items-center space-x-4">
           <AiOutlineMenu

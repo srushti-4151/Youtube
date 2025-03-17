@@ -23,7 +23,7 @@ import Signup from "./pages/LoginSignup/Signup";
 
 function App() {
   const dispatch = useDispatch();
-
+  
   useEffect(() => {
     dispatch(fetchCurrentUser()).then((res) => console.log("user fetched : ", res));
   }, [dispatch]);  
