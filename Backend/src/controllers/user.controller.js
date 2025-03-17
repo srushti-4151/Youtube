@@ -158,9 +158,11 @@ const loginUser = asyncHandler(async (req, res) => {
     secure: true,// Sends only over HTTPS
   };
 
+  // Only refreshToken is stored in a cookie (httpOnly, secure)
+  // Access token is returned in JSON (not stored in a cookie)
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
+    // .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
@@ -168,7 +170,6 @@ const loginUser = asyncHandler(async (req, res) => {
         { //we sending this both token in res (not recommended) because ma be user want to handle in frontend  
           user: loggedInUser,
           accessToken,
-          refreshToken,
         },
         "User logged In Successfully"
       )
@@ -208,6 +209,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
 
+    // console.log("incomming....", incomingRefreshToken)
+   
+
   if (!incomingRefreshToken) {
     throw new ApiError(401, "unauthorized request");
   }
@@ -217,6 +221,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
+
+    // console.log("decoded....",decodedToken)
 
     const user = await User.findById(decodedToken?._id);
     if (!user) {
@@ -236,12 +242,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
+      // .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", newRefreshToken, options)
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: newRefreshToken },
+          // { accessToken, refreshToken: newRefreshToken },
+          { accessToken },
           "Access token refreshed"
         )
       );
