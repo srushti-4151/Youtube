@@ -25,9 +25,8 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(fetchCurrentUser()).then((res) => console.log("User fetched:", res));
-  }, [dispatch]);
-  
+    dispatch(fetchCurrentUser()).then((res) => console.log("user fetched : ", res));
+  }, [dispatch]);  
 
   const SidebarisOpen = useSelector((state) => state.sidebar.isSidebarOpen);
 

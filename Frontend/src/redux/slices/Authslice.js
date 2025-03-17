@@ -47,8 +47,14 @@
 // Use createAsyncThunk + extraReducers → For asynchronous operations (e.g., API calls).
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { register, login, logout, getCurrentUser, refreshToken } from "../../api/AuthApi";
-
+import {
+  api,
+  register,
+  login,
+  logout,
+  getCurrentUser,
+  refreshToken,
+} from "../../api/AuthApi";
 
 export const refreshAuthToken = createAsyncThunk(
   "auth/refreshToken",
@@ -104,18 +110,17 @@ export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
   async (_, thunkAPI) => {
     try {
-      // First, try fetching the user
       const response = await getCurrentUser();
       console.log("get user current :", response);
-      if (response) return response; // User found, return it
-
+      if (response) return response;
     } catch (error) {
-      if (error.response?.status === 401) { 
-        // Token expired, try to refresh
+      if (error.response?.status === 401) {
         try {
-          await thunkAPI.dispatch(refreshAuthToken()).unwrap();
-          const retryResponse = await getCurrentUser(); // Retry fetching user
-          if (retryResponse) return retryResponse;
+          // **Fix: Ensure token is refreshed before retrying**
+          const newToken = await thunkAPI.dispatch(refreshAuthToken()).unwrap();
+          if (newToken) {
+            return await getCurrentUser(); // Retry fetching user
+          }
         } catch (refreshError) {
           return thunkAPI.rejectWithValue("Token refresh failed");
         }
@@ -124,7 +129,6 @@ export const fetchCurrentUser = createAsyncThunk(
     return thunkAPI.rejectWithValue("Failed to fetch user");
   }
 );
-
 
 const initialState = {
   isAuthenticated: false,
@@ -138,6 +142,7 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {},
+
   extraReducers: (builder) => {
     builder
       // Login Cases
@@ -150,6 +155,11 @@ const authSlice = createSlice({
         state.user = action.payload.data.user;
         state.token = action.payload.data.accessToken;
         state.isLoading = false;
+
+        // **Fix: Ensure token is set globally in Axios**
+        api.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${action.payload.data.accessToken}`;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isAuthenticated = false;
@@ -159,11 +169,17 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      //refresh toekn
+      // Refresh Token
       .addCase(refreshAuthToken.fulfilled, (state, action) => {
         state.token = action.payload;
         state.isAuthenticated = true;
         state.error = null;
+      })
+      .addCase(refreshAuthToken.rejected, (state) => {
+        state.isAuthenticated = false;
+        state.user = null;
+        state.token = null;
+        state.error = "Token refresh failed";
       })
 
       // Register

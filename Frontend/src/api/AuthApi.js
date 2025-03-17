@@ -11,35 +11,33 @@ const API_URL = "http://localhost:8000/api/v1/users";
 // You get the correct response instead of an error.
 
 // Create an Axios Instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, //ensure cookies are sent 
-})
-//Catch API Errors (Interceptor)
+  withCredentials: true, // Ensure cookies are sent 
+});
+
+// Response Interceptor
 api.interceptors.response.use(
-  (response) => response,//// If success, return response
+  (response) => response,
   async (error) => {
-    const originalRequest = error.config; // Save the failed request
-    // If the API fails with 401 Unauthorized, we check if the token is expired.
-    // If this is the first failure, we retry only once (_retry = true).
+    const originalRequest = error.config;
+
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; // Mark request as retried
+      originalRequest._retry = true;
 
       try {
-        // Dispatch refresh token action
-        //Calls the Redux action refreshAuthToken() to get a new token.
-         // ✅ Lazy import the store inside the function
-         const { store } = await import("../redux/store/Store.js");
-        
-         // Dispatch refreshAuthToken
-         const newToken = await store.dispatch(refreshAuthToken()).unwrap();
+        const { store } = await import("../redux/store/Store.js");
+        const newToken = await store.dispatch(refreshAuthToken()).unwrap();
 
-        // Update Axios headers with new token
-        //Set the New Token & Retry the Request
+        if (!newToken) {
+          return Promise.reject(error);
+        }
+
+        // **Fix: Update Axios default headers**
         api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
 
-        // Retry failed request
+        // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
         return Promise.reject(refreshError);
@@ -47,7 +45,8 @@ api.interceptors.response.use(
     }
     return Promise.reject(error);
   }
-)
+);
+
 
 //refresh token API
 export const refreshToken = async () => {
@@ -56,11 +55,12 @@ export const refreshToken = async () => {
       withCredentials: true, // Ensure cookies are sent
     });
 
-    return response.data; // Should return new access token
+    return response.data.accessToken; // Should return new access token
   } catch (error) {
     return null; // Token refresh failed
   }
 };
+
 
 // Login API
 export const login = async (userData) => {
