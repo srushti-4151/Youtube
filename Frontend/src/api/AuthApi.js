@@ -1,14 +1,7 @@
 import axios from "axios";
-import { refreshAuthToken } from "../redux/slices/Authslice.js"; // Import action
 
 const API_URL = "http://localhost:8000/api/v1/users";
 
-// You call getCurrentUser().
-// Your token is expired → API fails with 401 Unauthorized.
-// Interceptor catches the error.
-// Calls refreshAuthToken() to get a new token.
-// Saves the new token and retries the request.
-// You get the correct response instead of an error.
 
 // Create an Axios Instance
 export const api = axios.create({
@@ -52,8 +45,8 @@ api.interceptors.response.use(
   }
 );
 
-
 // Get Current User
+
 export const getCurrentUser = async () => {
   try {
     // const response = await axios.get(`${API_URL}/current-user`, {
@@ -67,25 +60,11 @@ export const getCurrentUser = async () => {
   }
 };
 
-//refresh token API
-// export const refreshToken = async () => {
-//   try {
-//     // const response = await axios.get(`${API_URL}/refresh-token`, {
-//     //   withCredentials: true, // Ensure cookies are sent
-//     // });
-//     const response = await api.get(`/refresh-token`);
-
-//     return response.data.accessToken; // Should return new access token
-//   } catch (error) {
-//     return null; // Token refresh failed
-//   }
-// };
-
 // Refresh Token Function
 export const refreshToken = async () => {
   try {
     const res = await api.post("/refresh-token");
-    const newAccessToken = res.data.data.accessToken;
+    const newAccessToken = res.data?.data?.accessToken;
 
     // Update the Authorization header
     api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
@@ -130,7 +109,13 @@ export const register = async (formData) => {
 // Logout API
 export const logout = async () => {
   try {
-    await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
+    await axios.post(`${API_URL}/logout`, {}, 
+      {
+         withCredentials: true,
+         headers: {
+          Authorization: api.defaults.headers.common["Authorization"], 
+        } 
+    });
     return { success: true };
   } catch (error) {
     return {

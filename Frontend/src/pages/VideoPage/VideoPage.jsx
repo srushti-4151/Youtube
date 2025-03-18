@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { AiOutlineFolderAdd } from "react-icons/ai";
-import { FiThumbsUp, FiThumbsDown } from "react-icons/fi";
+import { RiShareForwardLine } from "react-icons/ri";
+import { BiLike, BiDislike, BiSolidLike } from "react-icons/bi";
+import { HiDownload } from "react-icons/hi";
+import { FaCircleCheck } from "react-icons/fa6";
+
+// import { AiOutlineFolderAdd } from "react-icons/ai";
+// import { FiThumbsUp, FiThumbsDown } from "react-icons/fi";
 import { GoBell, GoThumbsup } from "react-icons/go";
 import img from "../../assets/images/img1.jpg";
 import vid1 from "../../assets/images/video1.mp4";
+import { LiaThumbsUpSolid  ,LiaThumbsDownSolid  } from "react-icons/lia";
+import { Link } from "react-router-dom";
+
 
 const VideoPage = () => {
   // Dummy suggested videos data
@@ -101,49 +109,143 @@ const VideoPage = () => {
     } else {
       document.body.style.overflow = "auto"; // Enable scrolling when modal closes
     }
-    
+
     // Cleanup function to reset overflow when component unmounts
     return () => {
       document.body.style.overflow = "auto";
     };
   }, [isOpen]);
-  
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-h-screen bg-black text-white p-4">
       {/* Left Section: Main Video Player */}
       <div className="lg:col-span-2">
         {/* videopart */}
-        <div className="w-full h-64 lg:h-96 rounded-lg overflow-hidden">
+        <div className="w-full h-64 lg:h-auto rounded-lg overflow-hidden">
           {videoData ? (
             <div className="relative">
               <video
-                src={videoData[0]}
-                controls={true}
+                src={videoData[0].videoUrl}
+                controls
                 autoPlay
-                className="w-full h-auto aspect-video rounded-lg object-contain"
+                className="w-full rounded-lg dark:shadow-custom dark:shadow-neutral-900 aspect-video"
               ></video>
             </div>
           ) : (
-            <div className="h-64 lg:h-96 bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+            <div className="h-64 lg:h-auto bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
               <button className="bg-white p-4 rounded-full">▶</button>
             </div>
           )}
         </div>
+        <p className="mt-4 text-base font-semibold sm:text-lg md:text-xl line-clamp-1">
+          title
+        </p>
+
+        <div className="flex flex-col items-start justify-between gap-4 mt-4 lg:flex-row">
+          <div className="flex items-start gap-3 lg:w-1/2 xl:w-2/3 sm:w-auto">
+            <Link
+              // href={`/user/${video?.data?.owner.userName}`}
+              className="flex-shrink-0"
+            >
+              <img
+                src={img}
+                alt="imgg here"
+                className="object-cover object-center rounded-full size-10 sm:size-12"
+                loading="lazy"
+              />
+            </Link>
+            <div className="flex items-center justify-between w-full xl:flex-col xl:items-start">
+              <div className="flex-grow min-w-0 max-w-[70%] md:max-w-full">
+                <span className="flex items-center gap-2">
+                  <a
+                    // href={`/user/${video?.data?.owner.userName}`}
+                    className="truncate"
+                  >
+                    <h1 className="text-sm truncate sm:text-base">
+                      {/* {video?.data?.owner.fullName} */} fyull name
+                    </h1>
+                  </a>
+                  <FaCircleCheck size={16} />
+                </span>
+                <p className="text-sm text-gray-500 sm:text-base">
+                  {/* {subscribersCount}{" "} */}1111
+                  <span className="text-sm">subscribers</span>
+                </p>
+              </div>
+
+              <button
+                // onClick={() =>
+                //   handleToggleSubscription(video?.data.owner._id)
+                // }
+                // className={`flex items-center gap-2 px-3 text-sm rounded-3xl w-max self-start flex-shrink-0 ml-2 xl:ml-0 ${
+                //   isSubscribed
+                //     ? "text-gray-100 dark:bg-gray-700"
+                //     : "text-gray-900 dark:bg-gray-200"
+                // }`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-3xl w-max self-start flex-shrink-0 ml-2 xl:ml-0 mt-2 text-black bg-gray-200 dark:bg-gray-200`}
+                // disabled={isTogglingSubscription}
+              >
+                {/* {isSubscribed ? <BellRing size={20} /> : <Bell size={20} />}
+                  <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span> */}
+                <GoBell size={20} />
+                <span>Subscribe</span>
+              </button>
+            </div>
+            {/* <button variant="dark" className="px-3 rounded-full">
+                Join
+              </button> */}
+          </div>
+          {/*like dislike share download*/}
+          <div className="flex flex-wrap items-center justify-start gap-2 full sm:gap-3 lg:flex-nowrap lg:w-1/2 xl:w-1/3 lg:justify-end">
+            <div className="flex items-center bg-[#31302f] rounded-full">
+              <button
+                className="flex gap-1 items-center bg-[#31302f] rounded-full rounded-r-none px-2 sm:px-3 text-xs sm:text-sm"
+                // onClick={handleToggleLike}
+                // disabled={isTogglingLike}
+              >
+                {/* {isLiked ? <BiSolidLike size={20} /> : <BiLike size={20} />}
+                <p>{video?.data?.likes}</p> */}
+                <BiLike size={20} /> <p>10</p>
+              </button>
+
+              <div className="border-l border-gray-300 h-5 bg-[#31302f]" />
+
+              <button className="flex gap-1 items-center bg-[#31302f] rounded-full rounded-l-none px-2 py-3 sm:px-3">
+                <BiDislike size={20} />
+              </button>
+            </div>
+
+            <button
+              className="bg-[#31302f] flex gap-1 items-center justify-center rounded-full px-2 py-3 sm:px-3 text-xs sm:text-sm"
+            >
+              <RiShareForwardLine size={24} className="text-gray-400" />
+              <p className="hidden sm:inline">Share</p>
+            </button>
+            <button
+              className="bg-[#31302f] flex gap-1 items-center rounded-full justify-center px-2 py-3 sm:px-3 text-xs sm:text-sm"
+            >
+              <HiDownload size={24} className="text-gray-400" />
+              <p className="hidden sm:inline">Download</p>
+            </button>
+
+            {/* <button variant="dark" size="icon" className="rounded-full">
+                <FaEllipsisH />
+              </button> */}
+          </div>
+        </div>
 
         {/* Details */}
         <div>
-          <div className="border border-white mt-7 p-4 rounded-2xl">
-            {/* Video - Title, views, duration  */}
-            <h2 className="mt-1 text-xl font-bold">
+          {/* Video - Title, views, duration  */}
+          {/* <h2 className="mt-1 text-xl font-bold">
               Lex Fridman plays Red Dead Redemption 2
             </h2>
             <div className="text-sm mt-1">
               <span className="text-gray-400">109,067 Views • </span>
               <span className="text-gray-400">18 hours ago</span>
-            </div>
-            {/* user , buttons */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-4 gap-2">
+            </div> */}
+          {/* user , buttons */}
+          {/* <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-4 gap-2">
               <div className="flex items-center justify-between">
                 <img
                   src={img}
@@ -176,24 +278,28 @@ const VideoPage = () => {
                   <AiOutlineFolderAdd className="text-2xl" /> Save
                 </button>
               </div>
-            </div>
+            </div> */}
 
-            {/* description */}
-            <div className="bg-gray-900 text-white text-sm rounded-lg p-4 mt-5">
-              <p className="mt-1 text-gray-300 leading-relaxed">
-                {IsShowmoreDes ? description : shortDescription}
-                <span
-                  className="text-gray-400 font-semibold cursor-pointer ml-1 hover:underline"
-                  onClick={() => setIsShowmoreDes(!IsShowmoreDes)}
-                >
-                  {IsShowmoreDes ? " Show less" : " more"}
-                </span>
-              </p>
-            </div>
+          {/* description */}
+          <div className="shadow-custom bg-[#202021] p-4 my-4 rounded-md text-md dark:bg-[#202021]">
+            <p>
+              {/* {VIEW_FORMATTER.format(video?.data?.views)} views &nbsp;
+                {formatTimeAgo(new Date(video?.data?.createdAt))} */}
+              123 views &nbsp; 3 months ago
+            </p>
+            <p className="mt-3 text-gray-300 leading-relaxed">
+              {IsShowmoreDes ? description : shortDescription}
+              <span
+                className="text-gray-400 font-semibold cursor-pointer ml-1 hover:underline"
+                onClick={() => setIsShowmoreDes(!IsShowmoreDes)}
+              >
+                {IsShowmoreDes ? " Show less" : " more"}
+              </span>
+            </p>
           </div>
 
           {/* Comment section */}
-          <div className="border border-white mt-7 p-4 rounded-2xl">
+          <div className="mt-7 p-4 rounded-2xl">
             <h2 className="text-lg font-semibold mb-2">53 Comments</h2>
 
             {/* my comment part */}
@@ -203,7 +309,7 @@ const VideoPage = () => {
                 <img
                   src={img}
                   alt="User Avatar"
-                  className="w-10 h-10 rounded-full"
+                  className="w-12 h-12 rounded-full"
                 />
 
                 {/* Comment Input Box */}
@@ -215,7 +321,7 @@ const VideoPage = () => {
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => !comment && setIsFocused(false)}
                     placeholder="Add a comment..."
-                    className="w-full focus:border-white bg-transparent text-white text-sm border-b border-gray-500 outline-none pb-1 pr-12"
+                    className="w-full bg-transparent text-white text-sm border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12"
                   />
                 </div>
               </div>
@@ -251,49 +357,56 @@ const VideoPage = () => {
               {comments.map((comment, index) => {
                 const shortComment = comment.text.slice(0, 100) + "...";
                 return (
-                  <div key={index} className="px-2 py-3 border-t">
+                  <div key={index} className="px-2 py-4">
                     <div className="flex items-start gap-3">
                       <img
                         src={comment.avatar}
                         alt="Avatar"
-                        className="w-10 h-10 rounded-full"
+                        className="w-12 h-12 rounded-full"
                       />
                       <div>
                         <p>
-                          <span className="text-[13px]">
+                          <span className="text-[16px]">
                             {comment.fullname}
                           </span>
-                          <span className="ml-2 text-[12px] text-gray-400">
+                          <span className="ml-2 text-[16px] text-gray-400">
                             {comment.time}
                           </span>
                         </p>
-                        <p className="text-sm">@{comment.username}</p>
+                        <p className="text-[15px]">@{comment.username}</p>
 
-                        <p className="text-[14px] mt-2">
+                        <p className="text-[16px] mt-2">
                           {IsShowmoreCom[index] ? comment.text : shortComment}
                           <span
-                            className="text-gray-400 font-semibold cursor-pointer ml-1 hover:underline"
+                            className="text-gray-400 text-[14px] font-semibold cursor-pointer ml-1 hover:underline"
                             onClick={() => {
                               setIsShowmoreCom((prev) =>
                                 prev.map((val, i) => (i === index ? !val : val))
-                              );                              
+                              );
                             }}
                           >
                             {IsShowmoreCom[index] ? "Show Less" : "Show More"}
                           </span>
                         </p>
 
-                        <div className="mt-2 flex items-center gap-2">
-                          <button>
-                            <GoThumbsup
-                              size={19}
-                              className="hover:text-[#65B8FF]"
-                            />
+                        <div className="flex mt-2">
+                          <button className="">
+                            <LiaThumbsUpSolid  size={20} />
                           </button>
-                          <span className="text-[12px] text-gray-400">
+                          <span className="text-[14px] text-gray-400">
                             {comment.likes}
                           </span>
+                          
+                          <button className="ml-5">
+                            <LiaThumbsDownSolid  size={20} />
+                          </button>
+                          <span className="text-[14px] text-gray-400">
+                            {comment.likes}
+                          </span>
+
+                          <button className="pl-4 text-sm">Reply</button>
                         </div>
+
                       </div>
                     </div>
                   </div>
@@ -311,7 +424,7 @@ const VideoPage = () => {
           {suggestedVideos.map((video, index) => (
             <div
               key={index}
-              className="flex border border-white bg-black text-white overflow-hidden"
+              className="flex bg-black text-white overflow-hidden"
             >
               <img
                 src={img}

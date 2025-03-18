@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 body {
+  font-family: "Nunito";
   background-color: black;
   color: white;
 }

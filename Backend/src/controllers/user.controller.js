@@ -143,6 +143,12 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid user credentials");
   }
 
+   // **Check if user already has a refresh token, then invalidate it**
+   if (user.refreshToken) {
+    user.refreshToken = null;
+    await user.save({ validateBeforeSave: false });
+  }
+
   const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
     user._id
   );
@@ -156,6 +162,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true, // // Prevents JavaScript access only server(backend) can modify
     secure: true,// Sends only over HTTPS
+    sameSite: "None",
   };
 
   // Only refreshToken is stored in a cookie (httpOnly, secure)
@@ -232,22 +239,29 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     if (incomingRefreshToken !== user?.refreshToken) {
       throw new ApiError(401, "Refresh token is expired or used");
     }
+
+    // Invalidate old refresh token before generating new one
+    user.refreshToken = null;
+    await user.save({ validateBeforeSave: false });
+
     const options = {
       httpOnly: true,
       secure: true,
+      sameSite: "None"
     };
 
-    const { accessToken, newRefreshToken } =
+    // Generate new tokens (this function will save the new refresh token)
+    const { accessToken, refreshToken } =
       await generateAccessAndRefereshTokens(user._id);
 
     return res
       .status(200)
       // .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
+      .cookie("refreshToken", refreshToken, options)
       .json(
         new ApiResponse(
           200,
-          // { accessToken, refreshToken: newRefreshToken },
+          // { accessToken, refreshToken: refreshToken },
           { accessToken },
           "Access token refreshed"
         )

@@ -19,7 +19,7 @@ const Sidebar = () => {
   return (
     // <div className={`h-screen bg-black text-white transition-all duration-300 ${isOpen ? "w-60" : "w-16"}`}>
     <div
-      className={`hidden md:block h-screen bg-black text-white p-2 transition-all duration-300 ${
+      className={`hidden md:block h-screen bg-black text-white py-2 pr-7 pl-2 transition-all duration-300 ${
         isOpen ? "w-60" : "md:w-16 w-0 overflow-hidden"
       } fixed top-0 left-0 z-50 flex flex-col`}
     >
@@ -97,17 +97,17 @@ const SidebarItem = ({ to, icon, text, isOpen }) => (
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center ${
+        `flex items-center rounded-md transition-all duration-300 ${
           isOpen ? "justify-start px-4" : "justify-center"
-        } py-2 hover:bg-gray-800 cursor-pointer w-full 
-        ${isActive ? "bg-gray-800" : ""}`
+        } py-3 hover:bg-[#D1D5DB] hover:text-black cursor-pointer w-full 
+        ${isActive ? "bg-[#D1D5DB] text-black" : ""}`
       }
     >
       <span className="text-2xl">{icon}</span>
       <span
-        className={`ml-4 transition-all duration-300 ${
+        className={`ml-4 ${
           isOpen
-            ? "opacity-100 scale-100 delay-200"
+            ? "opacity-100 scale-100"
             : "opacity-0 scale-90 hidden"
         }`}
       >
