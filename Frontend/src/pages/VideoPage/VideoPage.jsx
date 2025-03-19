@@ -3,16 +3,30 @@ import { RiShareForwardLine } from "react-icons/ri";
 import { BiLike, BiDislike, BiSolidLike } from "react-icons/bi";
 import { HiDownload } from "react-icons/hi";
 import { FaCircleCheck } from "react-icons/fa6";
-
 // import { AiOutlineFolderAdd } from "react-icons/ai";
 // import { FiThumbsUp, FiThumbsDown } from "react-icons/fi";
 import { GoBell, GoThumbsup } from "react-icons/go";
 import img from "../../assets/images/img1.jpg";
 import vid1 from "../../assets/images/video1.mp4";
 import { LiaThumbsUpSolid, LiaThumbsDownSolid } from "react-icons/lia";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchVideoById } from "../../redux/slices/Videoslice";
 
 const VideoPage = () => {
+
+  const { id } = useParams(); // Get video ID from URL
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+      dispatch(fetchVideoById(id)).then((res) => console.log("video fetched : ", res));
+  }, [id]);
+
+  const { selectedVideo, isLoading, error } = useSelector((state) => state.videos);
+  console.log("selectedVideo",selectedVideo)
+  console.log("Video URL:", selectedVideo?.videoFile); 
+
+
   // Dummy suggested videos data
   const suggestedVideos = [
     {
@@ -94,13 +108,6 @@ const VideoPage = () => {
     setIsShowmoreCom(Array(comments.length).fill(false));
   }, [comments]);
 
-  const videoData = [
-    {
-      // videoUrl: "https://youtu.be/L2ZlBbelFWs?si=oiKv4WhWNT3MjM5v",
-      videoUrl: vid1,
-    },
-  ];
-
   const [isOpen, setIsOpen] = useState(false);
   useEffect(() => {
     if (isOpen) {
@@ -121,10 +128,10 @@ const VideoPage = () => {
       <div className="lg:col-span-2">
         {/* videopart */}
         <div className="w-full h-64 lg:h-auto rounded-lg overflow-hidden">
-          {videoData ? (
+          {selectedVideo ? (
             <div className="relative">
               <video
-                src={videoData[0].videoUrl}
+                src={selectedVideo?.videoFile}
                 controls
                 autoPlay
                 className="w-full rounded-lg dark:shadow-custom dark:shadow-neutral-900 aspect-video"

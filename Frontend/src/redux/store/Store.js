@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import sidebarReducer from "../slices/Sidebarslice.js"
 import authReducer from "../slices/Authslice.js"
 import themeReducer from "../slices/ThemeSlice.js"
-// import videoReducer from "../slices/Videoslice.js"
+import videoReducer from "../slices/Videoslice.js"
 
 
 export const store = configureStore({
@@ -10,6 +10,6 @@ export const store = configureStore({
         sidebar: sidebarReducer,
         auth: authReducer,
         theme: themeReducer,
-        // videos: videoReducer,
+        videos: videoReducer,
     }
 })

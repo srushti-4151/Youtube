@@ -344,6 +344,9 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
       
   }
 
+  console.log("user........", req.user);
+  console.log("user id.......", req.user._id);
+
   const user = await User.findByIdAndUpdate(
       req.user?._id,
       {

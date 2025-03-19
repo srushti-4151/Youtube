@@ -36,6 +36,8 @@ const getAllVideosById = asyncHandler(async (req, res) => {
     userId,
   } = req.query;
   //   console.log("req.query.userId",req.query.userId)
+  console.log("Received userId:", req.query.userId);
+
 
   // Validate pagination params
   if (page < 1 || limit < 1) {
