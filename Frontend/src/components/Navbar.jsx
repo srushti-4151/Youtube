@@ -5,26 +5,44 @@ import { FaUserCircle } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import logo from "../assets/images/logo.png";
 import { NavLink } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { RiMenu3Line } from "react-icons/ri";
 import { fetchCurrentUser, logoutUser } from "../redux/slices/Authslice.js";
 import { handleSuccess } from "../utils/toast.js";
+import { AiOutlineUser } from "react-icons/ai";
+import { MdDarkMode, MdOutlineLightMode } from "react-icons/md";
+import { toggleTheme } from "../redux/slices/ThemeSlice.js";
 
 const Navbar = () => {
   const dispatch = useDispatch();
   const [mobileMenu, setMobileMenu] = useState(false);
-
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const { user } = useSelector((state) => state.auth);
   // console.log("User:", user);
+  const theme = useSelector((state) => state.theme.theme);
 
-  const handleout = () => {
+  const handleLogout = () => {
+    console.log("Before dispatching logout");
     dispatch(logoutUser());
+    console.log("After dispatching logout");
     handleSuccess("logged out");
-  }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setTimeout(() => setIsDropdownOpen(false), 300);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <>
-      <nav className="hidden md:flex fixed top-0 left-0 w-full bg-black text-white items-center justify-between py-1 px-7 shadow-md z-50">
+      <nav className="hidden dark:bg-black bg-white md:flex fixed top-0 left-0 w-full items-center justify-between py-1 px-7 shadow-md z-50">
         {/* Left - Logo & Menu */}
         <div className="flex items-center space-x-4">
           <AiOutlineMenu
@@ -39,35 +57,81 @@ const Navbar = () => {
         </div>
 
         {/* Middle - Search Bar */}
-        <div className="flex items-center w-1/2">
+        <div className="flex flex-grow md:max-w-[400px] lg:max-w-[600px]">
           <input
-            type="text"
+            type="search"
             placeholder="Search"
-            className="w-full px-4 py-1 bg-gray-900 border border-gray-700 text-white rounded-l-full focus:outline-none"
+            aria-label="Search"
+            className="rounded-l-full border dark:bg-[#121212] dark:shadow-none dark:border-gray-600 dark:focus:border-blue-500 border-secondary-marginal-border shadow-inner shadow-secondary-marginal
+             py-1 px-4 text-lg w-full focus:border-blue-500 outline-none"
           />
-          <button className="bg-gray-700 px-4 py-2 rounded-r-full">
+          <button className="py-2 px-4 rounded-r-full dark:bg-[#222222] dark:border-gray-600 border border-secondary-marginal-border border-l-0 flex-shrink-0">
             <AiOutlineSearch className="text-xl" />
           </button>
         </div>
 
         {/* Right - Icons */}
-        <div className="hidden md:flex items-center gap-4 text-sm">
+        <div className="hidden relative md:flex items-center gap-4  transition-all duration-300">
+          <button
+            onClick={() => dispatch(toggleTheme())}
+            className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full"
+          >
+            {theme === "light" ? (
+              <MdDarkMode size={20} />
+            ) : (
+              <MdOutlineLightMode size={20} />
+            )}
+          </button>
           {user ? (
             // Show Avatar if Logged In
-            <div className="flex items-center space-x-2">
-              {user.avatar ? (
-                <>
+            <div
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              ref={dropdownRef}
+              className="cursor-pointer"
+            >
+              {user ? (
                 <img
                   src={user.avatar}
                   alt="User Avatar"
-                  className="h-10 w-10 rounded-full cursor-pointer"
+                  className="w-10 h-10 rounded-full"
                 />
-                <button onClick={handleout}>
-                  Logout
-                </button>
-                </>
               ) : (
-                <FaUserCircle className="text-3xl cursor-pointer" />
+                <FaUserCircle className="text-3xl" />
+              )}
+              {/* Profile Dropdown */}
+              {isDropdownOpen && (
+                <div
+                  className={`absolute top-10 z-50 right-0 mt-2 w-56 dark:bg-gray-800 bg-white shadow-lg rounded-md py-2 border border-gray-900 transition-all duration-300 ease-out transform ${
+                    isDropdownOpen
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 translate-y-[-10px] pointer-events-none"
+                  }`}
+                >
+                  <div className="flex items-center space-x-2 px-4 py-2">
+                    <img
+                      src={user.avatar || "https://via.placeholder.com/40"}
+                      alt="User Avatar"
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div>
+                      <p className="font-semibold">{user.username}</p>
+                      <p className="text-gray-400">@{user.username}</p>
+                    </div>
+                  </div>
+                  <hr className="border-gray-600" />
+                  <button className="block w-full text-left px-4 py-2 dark:hover:bg-gray-700 hover:bg-gray-200">
+                    Settings
+                  </button>
+                  <button className="block w-full text-left px-4 py-2 dark:hover:bg-gray-700 hover:bg-gray-200">
+                    Keyboard Shortcuts
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-red-500 dark:hover:bg-gray-700 hover:bg-gray-200"
+                  >
+                    Logout
+                  </button>
+                </div>
               )}
             </div>
           ) : (
@@ -89,7 +153,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      <nav className="h-14 md:hidden flex fixed top-0 left-0 w-full bg-black text-white items-center justify-between py-1 px-5 shadow-md z-50 border-b border-white">
+      <nav className="h-14 md:hidden dark:bg-black bg-white flex fixed top-0 left-0 w-full items-center justify-between py-1 px-5 shadow-md z-50 border-b border-white">
         {/* Left - Logo */}
         <div className="flex items-center">
           <img src={logo} alt="Logo" className="h-12 w-12 cursor-pointer" />
@@ -99,10 +163,20 @@ const Navbar = () => {
         <div className="flex gap-3">
           {/* Search Bar */}
           <div className="flex items-center justify-end">
-            <button className="bg-black px-2 py-1 rounded-r-full">
+            <button className="dark:bg-black bg-white px-2 py-1 rounded-r-full">
               <AiOutlineSearch className="text-xl" />
             </button>
           </div>
+          <button
+            onClick={() => dispatch(toggleTheme())}
+            className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full"
+          >
+            {theme === "light" ? (
+              <MdDarkMode size={20} />
+            ) : (
+              <MdOutlineLightMode size={20} />
+            )}
+          </button>
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenu(!mobileMenu)}
@@ -114,7 +188,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`fixed top-14 right-0 w-[70%] h-full bg-black text-white p-5 flex flex-col transform ${
+          className={`fixed top-14 right-0 w-[70%] h-full dark:text-white text-black dark:bg-black bg-white p-5 flex flex-col transform ${
             mobileMenu ? "translate-x-0" : "translate-x-full"
           } transition-transform duration-300 ease-in-out md:hidden`}
         >

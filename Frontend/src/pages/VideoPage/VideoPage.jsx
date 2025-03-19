@@ -9,9 +9,8 @@ import { FaCircleCheck } from "react-icons/fa6";
 import { GoBell, GoThumbsup } from "react-icons/go";
 import img from "../../assets/images/img1.jpg";
 import vid1 from "../../assets/images/video1.mp4";
-import { LiaThumbsUpSolid  ,LiaThumbsDownSolid  } from "react-icons/lia";
+import { LiaThumbsUpSolid, LiaThumbsDownSolid } from "react-icons/lia";
 import { Link } from "react-router-dom";
-
 
 const VideoPage = () => {
   // Dummy suggested videos data
@@ -117,7 +116,7 @@ const VideoPage = () => {
   }, [isOpen]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-h-screen bg-black text-white p-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-h-screen dark:bg-black dark:text-white bg-white text-black p-4">
       {/* Left Section: Main Video Player */}
       <div className="lg:col-span-2">
         {/* videopart */}
@@ -196,7 +195,7 @@ const VideoPage = () => {
               </button> */}
           </div>
           {/*like dislike share download*/}
-          <div className="flex flex-wrap items-center justify-start gap-2 full sm:gap-3 lg:flex-nowrap lg:w-1/2 xl:w-1/3 lg:justify-end">
+          <div className="flex flex-wrap text-gray-200 items-center justify-start gap-2 full sm:gap-3 lg:flex-nowrap lg:w-1/2 xl:w-1/3 lg:justify-end">
             <div className="flex items-center bg-[#31302f] rounded-full">
               <button
                 className="flex gap-1 items-center bg-[#31302f] rounded-full rounded-r-none px-2 sm:px-3 text-xs sm:text-sm"
@@ -210,21 +209,17 @@ const VideoPage = () => {
 
               <div className="border-l border-gray-300 h-5 bg-[#31302f]" />
 
-              <button className="flex gap-1 items-center bg-[#31302f] rounded-full rounded-l-none px-2 py-3 sm:px-3">
+              <button className="flex gap-1 items-center bg-[#31302f] rounded-full rounded-l-none px-2 py-2 sm:px-3">
                 <BiDislike size={20} />
               </button>
             </div>
 
-            <button
-              className="bg-[#31302f] flex gap-1 items-center justify-center rounded-full px-2 py-3 sm:px-3 text-xs sm:text-sm"
-            >
-              <RiShareForwardLine size={24} className="text-gray-400" />
+            <button className="bg-[#31302f] text-gray-200 flex gap-1 items-center justify-center rounded-full px-2 py-2 sm:px-3 text-xs sm:text-sm">
+              <RiShareForwardLine size={24} />
               <p className="hidden sm:inline">Share</p>
             </button>
-            <button
-              className="bg-[#31302f] flex gap-1 items-center rounded-full justify-center px-2 py-3 sm:px-3 text-xs sm:text-sm"
-            >
-              <HiDownload size={24} className="text-gray-400" />
+            <button className="bg-[#31302f] flex gap-1 items-center rounded-full justify-center px-2 py-2 sm:px-3 text-xs sm:text-sm">
+              <HiDownload size={24} />
               <p className="hidden sm:inline">Download</p>
             </button>
 
@@ -281,13 +276,13 @@ const VideoPage = () => {
             </div> */}
 
           {/* description */}
-          <div className="shadow-custom bg-[#202021] p-4 my-4 rounded-md text-md dark:bg-[#202021]">
+          <div className="shadow-lg bg-[#F2F2F2] text-black p-4 my-4 rounded-md text-md dark:bg-[#202021] dark:text-gray-300">
             <p>
               {/* {VIEW_FORMATTER.format(video?.data?.views)} views &nbsp;
                 {formatTimeAgo(new Date(video?.data?.createdAt))} */}
               123 views &nbsp; 3 months ago
             </p>
-            <p className="mt-3 text-gray-300 leading-relaxed">
+            <p className="mt-3 leading-relaxed">
               {IsShowmoreDes ? description : shortDescription}
               <span
                 className="text-gray-400 font-semibold cursor-pointer ml-1 hover:underline"
@@ -321,7 +316,7 @@ const VideoPage = () => {
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => !comment && setIsFocused(false)}
                     placeholder="Add a comment..."
-                    className="w-full bg-transparent text-white text-sm border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12"
+                    className="w-full bg-transparent dark:text-white text-black text-sm border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12"
                   />
                 </div>
               </div>
@@ -391,14 +386,14 @@ const VideoPage = () => {
 
                         <div className="flex mt-2">
                           <button className="">
-                            <LiaThumbsUpSolid  size={20} />
+                            <LiaThumbsUpSolid size={20} />
                           </button>
                           <span className="text-[14px] text-gray-400">
                             {comment.likes}
                           </span>
-                          
+
                           <button className="ml-5">
-                            <LiaThumbsDownSolid  size={20} />
+                            <LiaThumbsDownSolid size={20} />
                           </button>
                           <span className="text-[14px] text-gray-400">
                             {comment.likes}
@@ -406,7 +401,6 @@ const VideoPage = () => {
 
                           <button className="pl-4 text-sm">Reply</button>
                         </div>
-
                       </div>
                     </div>
                   </div>
@@ -424,7 +418,7 @@ const VideoPage = () => {
           {suggestedVideos.map((video, index) => (
             <div
               key={index}
-              className="flex bg-black text-white overflow-hidden"
+              className="flex dark:bg-black bg-white dark:text-white text-black overflow-hidden"
             >
               <img
                 src={img}

@@ -19,19 +19,19 @@ const Sidebar = () => {
   return (
     // <div className={`h-screen bg-black text-white transition-all duration-300 ${isOpen ? "w-60" : "w-16"}`}>
     <div
-      className={`hidden md:block h-screen bg-black text-white py-2 pr-7 pl-2 transition-all duration-300 ${
-        isOpen ? "w-60" : "md:w-16 w-0 overflow-hidden"
+      className={`hidden dark:bg-black bg-white md:block h-screen py-2 pl-2 transition-all duration-300 ${
+        isOpen ? "w-60 pr-7" : "md:w-16 w-0 pr-0 overflow-hidden"
       } fixed top-0 left-0 z-50 flex flex-col`}
     >
       {/* Toggle Button */}
-      <div className="p-4 flex items-center">
+      {/* <div className="p-4 flex items-center">
         <AiOutlineMenu
           className="text-2xl cursor-pointer"
           onClick={() => dispatch(toggleSidebar())}
         />
-      </div>
+      </div> */}
 
-      <div className="flex h-full flex-col flex-1 justify-between">
+      <div className="mt-16 flex h-full flex-col flex-1 justify-between">
         {/* Sidebar Items */}
         <ul className="mt-3 space-y-2">
           <SidebarItem
@@ -99,7 +99,7 @@ const SidebarItem = ({ to, icon, text, isOpen }) => (
       className={({ isActive }) =>
         `flex items-center rounded-md transition-all duration-300 ${
           isOpen ? "justify-start px-4" : "justify-center"
-        } py-3 hover:bg-[#D1D5DB] hover:text-black cursor-pointer w-full 
+        } py-3 hover:bg-[#989ba0] hover:text-black cursor-pointer w-full 
         ${isActive ? "bg-[#D1D5DB] text-black" : ""}`
       }
     >

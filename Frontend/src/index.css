@@ -2,27 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Default Light Mode */
 body {
+  font-family: "Nunito";
+  background-color: white;
+  color: black;
+}
+
+/* Dark Mode */
+.dark body {
   font-family: "Nunito";
   background-color: black;
   color: white;
 }
-/* Apply styles to WebKit browsers (Chrome, Edge, Safari) */
+
+/* Default Light Mode Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a; /* Track color */
+  background: #e5e5e5; /* Light Mode Track */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4a5568; /* Thumb color */
+  background: #ae7aff; /* Light Mode Thumb */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2d3748; /* Thumb hover color */
+  background: #875ec9; /* Light Mode Thumb Hover */
+}
+
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a; /* Dark Mode Track */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #ae7aff; /* Dark Mode Thumb */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #875ec9; /* Dark Mode Thumb Hover */
 }
 

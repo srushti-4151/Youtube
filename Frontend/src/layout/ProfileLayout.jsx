@@ -3,12 +3,14 @@ import { Outlet, NavLink } from "react-router-dom";
 import img1 from "../assets/images/img1.jpg";
 import cover from "../assets/images/Designer.png";
 import { GoPersonAdd } from "react-icons/go";
+import { GoBell, GoThumbsup } from "react-icons/go";
+import { FaCircleCheck } from "react-icons/fa6";
 
 function ProfileLayout() {
   // Static data (replace with API call later)
   const [profileData, setProfileData] = useState({
     username: "Yash Mittal",
-    handle: "@YashMittal",
+    handle: "YashMittal",
     subscribers: "600k",
     subscribed: "220",
     profileImage: img1, // Replace with real image
@@ -23,34 +25,51 @@ function ProfileLayout() {
   }, []);
 
   return (
-    <div className="bg-black min-h-screen text-white">
+    <div className="dark:bg-black bg-white text-black min-h-screen dark:text-white px-2 pt-10 pb-4 overflow-x-hidden md:px-8">
       {/* Cover Image */}
-      <div
-        className="h-60 bg-cover bg-center"
-        style={{ backgroundImage: `url(${profileData.coverImage})` }}
-      ></div>
+      <img
+        src={profileData.coverImage}
+        alt="coverimage"
+        className="object-cover object-center w-full h-40 rounded-lg"
+      />
 
       {/* Profile Header */}
-      <div className="relative flex flex-col md:flex-row items-start md:items-center px-3 md:px-5">
-        <div className="mt-[-20px]">
-          <img
-            src={profileData.profileImage}
-            alt="Profile"
-            className="w-32 h-32 rounded-full border-4 border-black"
-          />
-        </div>
+      <div className="flex flex-col gap-4 mt-4 sm:flex-row md:mt-8">
+        <img
+          src={profileData.profileImage}
+          alt="Profile"
+          className="object-cover object-center mx-auto rounded-full size-24 md:size-40 sm:mx-0"
+        />
+        <div className="flex flex-col gap-2 text-center md:gap-3 sm:text-left">
+          <div className="flex items-center justify-center gap-2 sm:justify-start">
+            <h1 className="text-2xl md:text-3xl">{profileData.username}</h1>
+            <FaCircleCheck size={16} />
+          </div>
+          <div className="flex flex-wrap justify-center gap-1 text-sm sm:justify-start md:text-base">
+            <h2>@{profileData.handle}</h2>
+            <span className="hidden sm:inline">•</span>
 
-        <div className="md:ml-4 mt-4">
-          <h1 className="text-2xl font-bold">{profileData.username}</h1>
-          <p className="text-gray-400 text-sm mt-1">{profileData.handle}</p>
-          <p className="text-gray-400 text-sm mt-1">
-            {profileData.subscribers} Subscribers • {profileData.subscribed}{" "}
-            Subscribed
-          </p>
+            <p>{profileData.subscribers} Subscribers</p>
+            <span className="hidden sm:inline">•</span>
+
+            <p>{10 || 0} Videos</p>
+          </div>
+          {/* {loggedInUser?.data?._id === channel?.data?._id && (
+            <p>email : {channel.data.email}</p>
+          )} */}
+          {/* {loggedInUser?.data?._id !== channel?.data?._id && ( */}
+            <button
+              // onClick={() => handleToggleSubscription(channel.data._id)}
+              className="flex items-center justify-center w-full gap-2 px-3 py-2 mt-2 text-sm dark:text-gray-100 dark:bg-gray-700 text-gray-950 bg-gray-600 rounded-3xl sm:w-max sm:mt-0"
+              // disabled={isTogglingSubscription}
+            >
+              {/* {isSubscribed ? <BellRing size={20} /> : <Bell size={20} />}
+              <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span> */}
+               <GoBell size={20} />
+              <span>Subscribe</span>
+            </button>
+          {/* )} */}
         </div>
-        <button className="ml-0 md:ml-auto mt-2 px-4 py-2 bg-purple-500 text-black flex items-center gap-2">
-          <GoPersonAdd size={20}/> <span> Subscribe </span> 
-        </button>
       </div>
 
       {/* Navigation Tabs */}
@@ -60,11 +79,11 @@ function ProfileLayout() {
             key={tab}
             to={tab}
             className={({ isActive }) =>
-                `py-2 w-[25%] text-white text-center transition-all ${
-                  isActive
-                    ? "bg-white text-purple-600 font-bold "
-                    : "hover:text-purple-400"
-                }`
+              `py-2 w-[25%] text-white text-center transition-all ${
+                isActive
+                  ? "bg-white text-purple-600 font-bold "
+                  : "hover:text-purple-400"
+              }`
             }
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -72,7 +91,7 @@ function ProfileLayout() {
         ))}
       </div>
 
-      <hr className="my-4 mx-3 md:mx-5"/>
+      <hr className="my-4 mx-3 md:mx-5" />
 
       {/* Page Content */}
       <div className="px-3 md:px-5">
