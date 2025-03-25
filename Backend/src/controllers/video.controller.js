@@ -38,7 +38,6 @@ const getAllVideosById = asyncHandler(async (req, res) => {
   //   console.log("req.query.userId",req.query.userId)
   console.log("Received userId:", req.query.userId);
 
-
   // Validate pagination params
   if (page < 1 || limit < 1) {
     throw new ApiError(400, "Invalid pagination parameters");
@@ -149,7 +148,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   // -📌Apply pagination using $skip and $limit.
   //5️⃣ Calculate total pages.
   //6️⃣ Return the videos + pagination info in the response
-  
+
   //TODO: get all videos based on query, sort, pagination
   // /api/videos?page=2 & limit=10 & sortBy=createdAt & sortType=desc
   try {
@@ -454,24 +453,28 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: delete video
-  if(!isValidObjectId(videoId)){
+  if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Inavalid Video Id");
   }
-  try{
-    if(!videoId){
+  try {
+    if (!videoId) {
       throw new ApiError(400, "Video Id is Required");
     }
 
     const response = await Video.findByIdAndDelete(videoId);
 
-    if(!response){
+    if (!response) {
       throw new ApiError(500, "Failed  To delete");
     }
 
-    return res.status(200).json(new ApiResponse(200, {}, "video deleted Successfully"))
-
-  }catch(error){
-    throw new ApiError(500, error.message|| "Failed to delete video, try again");
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "video deleted Successfully"));
+  } catch (error) {
+    throw new ApiError(
+      500,
+      error.message || "Failed to delete video, try again"
+    );
   }
 });
 
@@ -488,15 +491,17 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
   const toggledVideoStatus = await Video.findByIdAndUpdate(
     videoId,
-    [{
-      $set: {
-        isPublished: {
-          $not: "$isPublished"
-        }
-      }
-    }],
-    {new: true}
-  )
+    [
+      {
+        $set: {
+          isPublished: {
+            $not: "$isPublished",
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
 
   if (!toggledVideoStatus) {
     throw new ApiError(404, "Video not found");

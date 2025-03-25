@@ -54,6 +54,10 @@ import {
   logout,
   getCurrentUser,
   refreshToken,
+  getUserChannelProfile,
+  updateAvatar,
+  updateCoverImage,
+  updateUserAccountDetails,
 } from "../../api/AuthApi.js";
 
 export const refreshAuthToken = createAsyncThunk(
@@ -91,6 +95,7 @@ export const registerUser = createAsyncThunk(
   "auth/register",
   async (formData, thunkAPI) => {
     const response = await register(formData);
+    console.log("register res:", response)
     if (!response.success) return thunkAPI.rejectWithValue(response.message);
     return response;
   }
@@ -134,11 +139,52 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+export const fetchUserChannelProfile = createAsyncThunk(
+  "auth/fetchUserChannelProfile",
+  async (username, thunkAPI) => {
+    const response = await getUserChannelProfile(username);
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return response;
+  }
+);
+
+// AuthSlice.js
+
+// Update Avatar
+export const updateUserAvatar = createAsyncThunk(
+  "auth/updateAvatar",
+  async (avatarFile, thunkAPI) => {
+    const response = await updateAvatar(avatarFile);
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return response.data; // Return updated user data
+  }
+);
+
+// Update Cover Image
+export const updateUserCoverImage = createAsyncThunk(
+  "auth/updateCoverImage",
+  async (coverImageFile, thunkAPI) => {
+    const response = await updateCoverImage(coverImageFile);
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return response.data; // Return updated user data
+  }
+);
+
+// Update Account Details
+export const updateAccountDetails = createAsyncThunk(
+  "auth/updateAccountDetails",
+  async (accountData, thunkAPI) => {
+    const response = await updateUserAccountDetails(accountData);
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return response.data; // Return updated user data
+  }
+);
 
 
 const initialState = {
   isAuthenticated: false,
   user: null,
+  userChannelProfile: null,
   token: null,
   isLoading: false,
   error: null,
@@ -217,8 +263,8 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        state.isAuthenticated = false;
-        state.user = action.payload.data.user;
+        state.isAuthenticated = true;
+        state.user = action.payload;
         state.token = null;
         state.isLoading = false;
         state.error = null;
@@ -246,6 +292,65 @@ const authSlice = createSlice({
       .addCase(logoutUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload?.message || "Logout failed";
+      })
+
+      .addCase(fetchUserChannelProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserChannelProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.error = null;
+        state.userChannelProfile = action.payload.data; // Store user channel profile in state
+      })
+      .addCase(fetchUserChannelProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Failed to fetch user channel profile";
+      })
+
+      // Update Avatar
+      .addCase(updateUserAvatar.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserAvatar.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload; // Update user data with new avatar
+        state.error = null;
+      })
+      .addCase(updateUserAvatar.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Failed to update avatar";
+      })
+
+      // Update Cover Image
+      .addCase(updateUserCoverImage.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserCoverImage.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload; // Update user data with new cover image
+        state.error = null;
+      })
+      .addCase(updateUserCoverImage.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Failed to update cover image";
+      })
+
+      // Update Account Details
+      .addCase(updateAccountDetails.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateAccountDetails.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload; // Update user data with new account details
+        state.error = null;
+      })
+      .addCase(updateAccountDetails.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Failed to update account details";
       });
   },
 });

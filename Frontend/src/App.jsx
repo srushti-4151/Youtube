@@ -13,23 +13,31 @@ import { useDispatch, useSelector } from "react-redux";
 import VideoPage from "./pages/VideoPage/VideoPage";
 import MobileBottomBar from "./components/MobileBottomBar";
 import ProfileLayout from "./layout/ProfileLayout";
-import VideoSection from "./pages/Profile/VideoSection"
-import PlaylistSection from "./pages/Profile/PlaylistSection"
-import TweetsSection from "./pages/Profile/TweetsSection"
-import FollowingSection from "./pages/Profile/FollowingSection"
-import { fetchCurrentUser, loginUser, logoutUser } from "./redux/slices/Authslice";
+import VideoSection from "./pages/Profile/VideoSection";
+import PlaylistSection from "./pages/Profile/PlaylistSection";
+import TweetsSection from "./pages/Profile/TweetsSection";
+import FollowingSection from "./pages/Profile/FollowingSection";
+import {
+  fetchCurrentUser,
+  loginUser,
+  logoutUser,
+} from "./redux/slices/Authslice";
 import Login from "./pages/LoginSignup/Login";
 import Signup from "./pages/LoginSignup/Signup";
 
 function App() {
   const dispatch = useDispatch();
-  
+
   useEffect(() => {
     // dispatch(fetchCurrentUser()).then((res) => console.log("user fetched : ", res));
-    dispatch(fetchCurrentUser())
-  }, [dispatch]);  
+    dispatch(fetchCurrentUser());
+  }, [dispatch]);
+
+  // const user = useSelector((state) => state.auth.user)
+  // console.log("userr",user)
 
   const SidebarisOpen = useSelector((state) => state.sidebar.isSidebarOpen);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   return (
     <>
@@ -40,6 +48,15 @@ function App() {
             SidebarisOpen ? "lg:ml-60 md:ml-16 ml-0" : "md:ml-16 ml-0"
           }`}
         >
+        {/* <div
+          className={`flex-1 overflow-y-auto transition-all duration-300 ${
+            isAuthenticated
+              ? SidebarisOpen
+                ? "lg:ml-60 md:ml-16 ml-0" // Sidebar Open -> Margin applied
+                : "md:ml-16 ml-0" // Sidebar Closed -> Small Margin for MD screens
+              : "ml-0" // No Sidebar (Unauthenticated) -> No Margin
+          }`}
+        > */}
           <Navbar />
           <MobileBottomBar />
           <div className="mt-16 mb-20 md:mb-10">
@@ -53,16 +70,16 @@ function App() {
               <Route path="/my-content" element={<MyContent />} />
               <Route path="/collection" element={<Collection />} />
               <Route path="/subscribers" element={<Subscribers />} />
-              <Route path="/profile" element={<ProfileLayout />}>
-                <Route path="video" element={<VideoSection />} />
-                <Route path="playlist" element={<PlaylistSection />} />
+              <Route path="/profile/:username" element={<ProfileLayout />}>
+                <Route path="videos" element={<VideoSection />} />
+                <Route path="playlists" element={<PlaylistSection />} />
                 <Route path="tweets" element={<TweetsSection />} />
                 <Route path="following" element={<FollowingSection />} />
               </Route>
             </Routes>
           </div>
         </div>
-      </div> 
+      </div>
     </>
   );
 }

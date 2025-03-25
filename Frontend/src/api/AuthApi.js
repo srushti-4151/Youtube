@@ -99,6 +99,9 @@ export const register = async (formData) => {
     });
     return response.data;
   } catch (error) {
+    console.log("Axios error response:", error.response?.data);
+    console.log("Axios full error:", error);
+    
     return {
       success: false,
       message: error.response?.data?.message || "An error occurred",
@@ -121,6 +124,97 @@ export const logout = async () => {
     return {
       success: false,
       message: error.response?.data?.message || "An error occurred",
+    };
+  }
+};
+
+// Get User Channel Profile
+// export const getUserChannelProfile = async (username) => {
+//   try {
+//     const response = await api.get(`/c/${username}`);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error fetching user channel profile:", error);
+//     return {
+//       success: false,
+//       message: error.response?.data?.message || "Failed to fetch user profile",
+//     };
+//   }
+// };
+
+export const getUserChannelProfile = async (username) => {
+  try {
+    const response = await axios.get(`${API_URL}/c/${username}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user channel profile:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to fetch user profile",
+    };
+  }
+};
+
+// AuthApi.js
+
+// Update Avatar
+export const updateAvatar = async (avatarFile) => {
+  try {
+    const formData = new FormData();
+    formData.append("avatar", avatarFile);
+
+    const response = await api.patch("/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    console.log("avatar res",response)
+
+    return response.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to update avatar",
+    };
+  }
+};
+
+// Update Cover Image
+export const updateCoverImage = async (coverImageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append("coverImage", coverImageFile);
+
+    const response = await api.patch("/cover-image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    console.log("cover image res",response)
+
+    return response.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to update cover image",
+    };
+  }
+};
+
+// Update Account Details
+export const updateUserAccountDetails = async (accountData) => {
+  try {
+    const response = await api.patch("/update-account", accountData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to update account details",
     };
   }
 };

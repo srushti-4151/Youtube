@@ -4,7 +4,7 @@ import { MdOutlineVideoCall } from "react-icons/md";
 import { FaUserCircle } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import logo from "../assets/images/logo.png";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { RiMenu3Line } from "react-icons/ri";
 import { fetchCurrentUser, logoutUser } from "../redux/slices/Authslice.js";
@@ -42,7 +42,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="hidden dark:bg-black bg-white md:flex fixed top-0 left-0 w-full items-center justify-between py-1 px-7 shadow-md z-50">
+      <nav className="hidden dark:bg-black bg-white md:flex fixed top-0 left-0 w-full items-center justify-between py-1 px-7 z-50">
         {/* Left - Logo & Menu */}
         <div className="flex items-center space-x-4">
           <AiOutlineMenu
@@ -108,11 +108,13 @@ const Navbar = () => {
                   }`}
                 >
                   <div className="flex items-center space-x-2 px-4 py-2">
+                    <Link to={`/profile/${user.username}`}>
                     <img
                       src={user.avatar || "https://via.placeholder.com/40"}
                       alt="User Avatar"
                       className="w-10 h-10 rounded-full"
                     />
+                    </Link>
                     <div>
                       <p className="font-semibold">{user.username}</p>
                       <p className="text-gray-400">@{user.username}</p>

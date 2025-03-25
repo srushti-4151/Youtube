@@ -35,5 +35,7 @@ app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/playlists", playlistRouter);
 
 // // ex. = http://localhost:8000/api/v1/users/register
+import { errorHandler } from "./middlewares/errorHandler.js";
+app.use(errorHandler);  
 
 export { app }

@@ -3,7 +3,8 @@ import sidebarReducer from "../slices/Sidebarslice.js"
 import authReducer from "../slices/Authslice.js"
 import themeReducer from "../slices/ThemeSlice.js"
 import videoReducer from "../slices/Videoslice.js"
-
+import subscriptionreducer from "../slices/Subscriptionslice.js"
+import commentreducer from "../slices/CommentSlice.js"
 
 export const store = configureStore({
     reducer: {
@@ -11,5 +12,7 @@ export const store = configureStore({
         auth: authReducer,
         theme: themeReducer,
         videos: videoReducer,
+        subscriptions : subscriptionreducer,
+        comments : commentreducer,
     }
 })

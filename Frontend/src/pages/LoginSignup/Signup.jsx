@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser } from "../../redux/slices/Authslice";
+import { loginUser, registerUser } from "../../redux/slices/Authslice";
 import { handleError, handleSuccess } from "../../utils/toast";
+import { useNavigate } from "react-router-dom";
+import ImageCropper from "../../utils/ImageCropper";
 
 const Signup = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isLoading } = useSelector((state) => state.auth);
   const {
     register,
@@ -13,49 +16,104 @@ const Signup = () => {
     formState: { errors },
   } = useForm();
 
+  const [avatar, setAvatar] = useState(null);
+  const [coverImage, setCoverImage] = useState(null);
+  const [cropType, setCropType] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState(null);
+
+  // Convert Base64 to File
+  const base64ToFile = (base64String, filename) => {
+    let arr = base64String.split(",");
+    let mime = arr[0].match(/:(.*?);/)[1];
+    let bstr = atob(arr[1]);
+    let n = bstr.length;
+    let u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Handle Cropping
+  const handleCropComplete = (croppedBase64, type) => {
+    const file = base64ToFile(croppedBase64, `${type}.jpg`);
+    if (type === "avatar") {
+      setAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    } else {
+      setCoverImage(file);
+      setCoverImagePreview(URL.createObjectURL(file));
+    }
+    setShowCropper(false);
+  };
+
   const onSubmit = async (data) => {
-    // console.log(data);
     try {
+        if (!avatar) {
+          handleError("Avatar is required!");
+          return;
+        }
       const formData = new FormData();
       formData.append("username", data.username);
       formData.append("email", data.email);
       formData.append("fullName", data.fullName);
       formData.append("password", data.password);
-      formData.append("avatar", data.avatar[0]);
-      if (data.coverImage?.length > 0) {
-        formData.append("coverImage", data.coverImage[0]);
-      }
 
-      const result = await dispatch(registerUser(formData)).unwrap();;
+      // Convert base64 images to blobs before appending
+
+      formData.append("avatar", avatar); // ✅ Real file now!
+      if (coverImage) formData.append("coverImage", coverImage); // ✅ Real file now!
+
+      console.log("Form Submitted", formData); // Debugging
+
+      // formData.append("avatar", data.avatar[0]);
+      // if (data.coverImage?.length > 0) {
+      //   formData.append("coverImage", data.coverImage[0]);
+      // }
+
+      const result = await dispatch(registerUser(formData)).unwrap();
 
       if (result.success) {
-        handleSuccess(result.message || "Registered successfully!"); // Show backend message
+        handleSuccess(result.message || "Registered successfully!");
+
+        // Auto login after successful registration
+        const loginData = {
+          email: data.email,
+          password: data.password,
+        };
+
+        const loginResult = await dispatch(loginUser(loginData)).unwrap();
+
+        if (loginResult.success) {
+          handleSuccess("Logged in successfully!");
+          navigate("/"); // Redirect to homepage
+        }
       }
     } catch (err) {
-      handleError(err.message || "Registration failed. Please try again.");
+      handleError(err || "Registration failed. Please try again.");
     }
   };
 
   return (
-    <div className="flex justify-center items-center p-6 bg-gray-900 text-black shadow-lg rounded-lg">
+    <div className="flex justify-center items-center p-6 dark:bg-black dark:text-white text-black bg-white rounded-lg">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-black p-6 rounded-lg shadow-md w-96 space-y-4"
+        className="dark:bg-gray-800 bg-gray-200 p-6 border border-gray-500 rounded-lg shadow-xl w-96 space-y-4"
       >
-        <h2 className="text-white text-2xl font-bold text-center mb-4">
-          Register
-        </h2>
+        <h2 className="text-2xl font-bold text-center mb-4">Register</h2>
 
         {/* username */}
         <div>
-          <label htmlFor="username" className="block text-gray-700">
+          <label htmlFor="username" className="block">
             Username
           </label>
           <input
             id="username"
             type="text"
             {...register("username", { required: "Username is required" })}
-            className="w-full p-2 border rounded-lg"
+            className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
           {errors.username && (
             <p className="text-red-500">{errors.username.message}</p>
@@ -64,7 +122,7 @@ const Signup = () => {
 
         {/* email */}
         <div>
-          <label htmlFor="email" className="block text-gray-700">
+          <label htmlFor="email" className="block">
             Email
           </label>
           <input
@@ -77,7 +135,7 @@ const Signup = () => {
                 message: "Invalid email address",
               },
             })}
-            className="w-full p-2 border rounded-lg"
+            className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
           {errors.email && (
             <p className="text-red-500">{errors.email.message}</p>
@@ -86,14 +144,14 @@ const Signup = () => {
 
         {/* fullName  */}
         <div>
-          <label htmlFor="fullName" className="block text-gray-700">
+          <label htmlFor="fullName" className="block">
             Full Name
           </label>
           <input
             id="fullName"
             type="text"
             {...register("fullName", { required: "Full Name is required" })}
-            className="w-full p-2 border rounded-lg"
+            className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
           {errors.fullName && (
             <p className="text-red-500">{errors.fullName.message}</p>
@@ -101,9 +159,15 @@ const Signup = () => {
         </div>
 
         {/* avatar */}
-        <div>
-          <label htmlFor="avatar" className="block text-gray-700">
+        {/* <div>
+          <label htmlFor="avatar" className="block">
             Avatar{" "}
+          </label>
+          <label
+            htmlFor="avatar"
+            className="inline-block bg-gradient-to-r mt-1 from-yellow-500 to-pink-500 text-white px-4 py-1 rounded cursor-pointer hover:opacity-90 transition"
+          >
+            Upload Avatar
           </label>
           <input
             id="avatar"
@@ -124,21 +188,28 @@ const Signup = () => {
                 },
               },
             })}
-            className="w-full p-2 border rounded-lg"
+            className="hidden"
           />
           {errors.avatar && (
             <p className="text-red-500">{errors.avatar.message}</p>
           )}
-        </div>
+        </div> */}
 
         {/* cover image  */}
-        <div>
-          <label htmlFor="coverImage" className="block text-gray-700">
+        {/* <div>
+          <label htmlFor="coverImage" className="block">
             Cover Image
+          </label>
+          <label
+            htmlFor="coverImage"
+            className="inline-block bg-gradient-to-r mt-1 from-yellow-500 to-pink-500 text-white px-4 py-1 rounded cursor-pointer hover:opacity-90 transition"
+          >
+            Upload Cover Image
           </label>
           <input
             id="coverImage"
             type="file"
+            className="hidden"
             name="coverImage"
             accept="image/*"
             {...register("coverImage", {
@@ -155,11 +226,55 @@ const Signup = () => {
               },
             })}
           />
+        </div> */}
+
+        {/* Avatar Upload with Cropping */}
+        <div>
+          <label className="block">Avatar</label>
+          <button
+            type="button"
+            className="bg-blue-500 text-white px-4 py-1 rounded cursor-pointer"
+            onClick={() => {
+              setCropType("avatar");
+              setShowCropper(true);
+            }}
+          >
+            Upload Avatar
+          </button>
+          {avatarPreview && (
+            <img
+              src={avatarPreview}
+              alt="Avatar preview"
+              className="mt-2 w-16 h-16 rounded-full"
+            />
+          )}
+        </div>
+
+        {/* Cover Image Upload with Cropping */}
+        <div>
+          <label className="block">Cover Image</label>
+          <button
+            type="button"
+            className="bg-green-500 text-white px-4 py-1 rounded cursor-pointer"
+            onClick={() => {
+              setCropType("cover");
+              setShowCropper(true);
+            }}
+          >
+            Upload Cover Image
+          </button>
+          {coverImagePreview && (
+            <img
+              src={coverImagePreview}
+              alt="Cover preview"
+              className="mt-2 w-full h-32 rounded"
+            />
+          )}
         </div>
 
         {/* password */}
         <div>
-          <label className="block text-gray-700">Password</label>
+          <label className="block">Password</label>
           <input
             type="password"
             {...register("password", {
@@ -169,7 +284,7 @@ const Signup = () => {
                 message: "Password must be at least 8 characters",
               },
             })}
-            className="w-full p-2 border rounded-lg"
+            className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
           {errors.password && (
             <p className="text-red-500">{errors.password.message}</p>
@@ -178,11 +293,18 @@ const Signup = () => {
 
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white p-2 rounded-lg"
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 rounded-lg text-lg font-semibold shadow-md hover:opacity-90 transition"
         >
-           {isLoading ? "Registering..." : "Register"}
+          {isLoading ? "Registering..." : "Register"}
         </button>
       </form>
+      {showCropper && (
+        <ImageCropper
+          cropType={cropType}
+          onCropComplete={handleCropComplete}
+          onClose={() => setShowCropper(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { timeAgo, formatDuration } from "../utils/timeUtils.js";
 
 const VideoCard = ({ video }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -7,16 +8,24 @@ const VideoCard = ({ video }) => {
 
   const handleMouseEnter = () => {
     setIsHovered(true);
+
     if (videoRef.current) {
-      videoRef.current.play();
+      videoRef.current
+        .play()
+        .catch((err) => console.error("Playback failed:", err));
     }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
+
     if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0; // Reset video on mouse leave
+      setTimeout(() => {
+        if (!isHovered) {
+          videoRef.current.pause();
+          videoRef.current.currentTime = 0; // Reset video
+        }
+      }, 200); // Small delay to avoid abrupt interruption
     }
   };
 
@@ -27,35 +36,40 @@ const VideoCard = ({ video }) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Thumbnail / Video Section */}
+        {/* Thumbnail / Video */}
         <div className="relative w-full h-44">
           {!isHovered ? (
             <img
               src={video.thumbnail}
               alt={video.title}
-              className="w-full h-44 object-cover rounded-lg"
+              className={`w-full h-44 object-cover rounded-lg absolute top-0 left-0 transition-opacity duration-500 ${
+              isHovered ? "opacity-0" : "opacity-100"
+            }`}
             />
           ) : (
             <video
               ref={videoRef}
-              src={video.videoUrl} // Ensure `videoUrl` is in your data
-              className="w-full h-44 object-cover rounded-lg"
+              src={video.videoFile}
+              className={`w-full h-44 object-cover rounded-lg absolute top-0 left-0 transition-opacity duration-500 ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
               muted
               loop
+              playsInline
+              preload="auto" // Change to "auto" for faster loading
             />
           )}
 
           {/* Video Duration */}
           {!isHovered && (
             <span className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md opacity-80 bg-black text-white">
-              {video.duration}
+              {formatDuration(video.duration)}
             </span>
           )}
         </div>
 
         {/* Video Info */}
         <div className="py-3 flex">
-          {/* Channel Avatar */}
           <img
             src={video.owner.avatar}
             alt={video.channelName}
@@ -68,7 +82,7 @@ const VideoCard = ({ video }) => {
             </h3>
             <p className="text-xs text-gray-400">{video.channelName}</p>
             <p className="text-xs text-gray-400">
-              {video.views} • {video.createdAt} ago
+              {video.views} views • {timeAgo(video.createdAt)}
             </p>
           </div>
         </div>

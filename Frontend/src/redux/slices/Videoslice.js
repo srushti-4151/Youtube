@@ -64,6 +64,7 @@ const initialState = {
   pagination: null, // Stores pagination details
   selectedVideo: null,
   isLoading: false,
+  isUploading: false,
   error: null,
 };
 
@@ -74,6 +75,7 @@ const videoSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
+    // Fetch all videos
       .addCase(fetchAllVideos.pending, (state) => {
         state.isLoading = true;
       })
@@ -86,11 +88,12 @@ const videoSlice = createSlice({
         state.isLoading = false;
       })
 
+      // Fetch video By id
       .addCase(fetchVideoById.pending, (state) => {
         state.isLoading = true;
       })
       .addCase(fetchVideoById.fulfilled, (state, action) => {
-        state.selectedVideo = action.payload.data;
+        state.selectedVideo = action.payload.data || null;
         state.isLoading = false;
       })
       .addCase(fetchVideoById.rejected, (state, action) => {
@@ -98,6 +101,7 @@ const videoSlice = createSlice({
         state.isLoading = false;
       })
 
+      // Fetch user videos
       .addCase(fetchUserVideos.pending, (state) => {
         state.isLoading = true;
       })
@@ -112,9 +116,17 @@ const videoSlice = createSlice({
         state.isLoading = false;
       })
 
-      .addCase(uploadVideo.fulfilled, (state, action) => {
-        state.userVideos.unshift(action.payload); // Add new video to the UI instantly
+      // Upload video
+      .addCase(uploadVideo.pending, (state) => {
+        state.isUploading = true; 
       })
+      .addCase(uploadVideo.fulfilled, (state, action) => {
+        state.isUploading = false;
+      })
+      .addCase(uploadVideo.rejected, (state, action) => {
+        state.isUploading = false;
+        state.error = action.payload;
+      });  
   },
 });
 

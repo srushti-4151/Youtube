@@ -22,12 +22,12 @@ const Login = () => {
   };
 
   return (
-    <div className="flex justify-center items-center text-black min-h-screen bg-gray-900">
+    <div className="flex justify-center items-center p-6 dark:bg-black dark:text-white text-black bg-white rounded-lg">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-black p-6 rounded-lg shadow-md w-96"
+        className="dark:bg-gray-800 bg-gray-200 p-6 border border-gray-500 rounded-lg shadow-xl w-96 space-y-4"
       >
-        <h2 className="text-white text-2xl font-bold text-center mb-4">Login</h2>
+        <h2 className="text-2xl font-bold text-center mb-4">Login</h2>
 
         {error && <p className="text-red-500 text-center">{error}</p>}
 
@@ -37,7 +37,7 @@ const Login = () => {
           <input
             type="email"
             {...register("email", { required: "Email is required" })}
-            className="w-full p-2 border rounded focus:outline-none focus:border-blue-500"
+            className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
           {errors.email && <p className="text-red-500">{errors.email.message}</p>}
         </div>
@@ -48,7 +48,7 @@ const Login = () => {
           <input
             type="password"
             {...register("password", { required: "Password is required" })}
-            className="w-full p-2 border rounded focus:outline-none focus:border-blue-500"
+            className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
           {errors.password && <p className="text-red-500">{errors.password.message}</p>}
         </div>
@@ -56,7 +56,7 @@ const Login = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 rounded-lg text-lg font-semibold shadow-md hover:opacity-90 transition"
           disabled={isLoading}
         >
           {isLoading ? "Logging in..." : "Login"}

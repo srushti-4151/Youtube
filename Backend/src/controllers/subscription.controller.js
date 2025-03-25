@@ -210,4 +210,35 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
   }
 });
 
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels };
+const checkSubscriptionStatus = asyncHandler(async (req, res) => {
+  const { username } = req.params; // Get username from request
+  const userId = req.user?._id; // Get logged-in user's ID
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized - Please log in");
+  }
+
+  if (!username) {
+    throw new ApiError(400, "Username is required");
+  }
+
+  // Find the channel (user) by username
+  const channel = await User.findOne({ username: username.toLowerCase() });
+
+  if (!channel) {
+    throw new ApiError(404, "User (channel) not found");
+  }
+
+  // Check if the logged-in user is subscribed to the found channel
+  const isSubscribed = await Subscription.exists({
+    subscriber: userId,
+    channel: channel._id,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { isSubscribed: !!isSubscribed }, "Subscription status checked"));
+});
+
+
+export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels, checkSubscriptionStatus };
