@@ -301,27 +301,62 @@ const getVideoById = asyncHandler(async (req, res) => {
       {
         $addFields: {
           // like count
-          likesCount: { $size: "$likes" },
-          //Checking if the Current User Liked the Video
-          isliked: {
-            $cond: {
-              if: req.user?._id
-                ? {
-                    $in: [
-                      new mongoose.Types.ObjectId(req.user._id),
-                      {
-                        $map: {
-                          input: "$likes",
-                          as: "like",
-                          in: "$$like.likedBy",
-                        },
-                      },
-                    ],
-                  }
-                : false,
-              then: true,
-              else: false,
+          //likesCount: { $size: "$likes" },
+          likesCount: {
+            $size: {
+              $filter: {
+                input: "$likes",
+                as: "like",
+                cond: { $eq: ["$$like.type", "like"] }, // Only count likes
+              },
             },
+          },
+          dislikesCount: {
+            $size: {
+              $filter: {
+                input: "$likes",
+                as: "like",
+                cond: { $eq: ["$$like.type", "dislike"] }, // Only count dislikes
+              },
+            },
+          },
+          //Checking if the Current User Liked the Video
+          isLiked: {
+            $in: [
+              new mongoose.Types.ObjectId(req.user?._id),
+              {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$likes",
+                      as: "like",
+                      cond: { $eq: ["$$like.type", "like"] }, // Filter only likes
+                    },
+                  },
+                  as: "filteredLike",
+                  in: "$$filteredLike.likedBy",
+                },
+              },
+            ],
+          },
+          // Check if the current user disliked the video
+          isDisliked: {
+            $in: [
+              new mongoose.Types.ObjectId(req.user?._id),
+              {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$likes",
+                      as: "like",
+                      cond: { $eq: ["$$like.type", "dislike"] }, // Filter only dislikes
+                    },
+                  },
+                  as: "filteredDislike",
+                  in: "$$filteredDislike.likedBy",
+                },
+              },
+            ],
           },
           //Transforming Owner Data
           owner: {

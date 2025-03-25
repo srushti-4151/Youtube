@@ -21,7 +21,7 @@ export const addComment = async (videoId, commentData) => {
 // Get Video Comments
 export const getVideoComments = async (videoId) => {
   try {
-    const response = await api.get(`${COMMENT_API_URL}/${videoId}`);
+    const response = await axios.get(`${COMMENT_API_URL}/${videoId}`);
     console.log("gett comment res", response)
     return response.data;
   } catch (error) {

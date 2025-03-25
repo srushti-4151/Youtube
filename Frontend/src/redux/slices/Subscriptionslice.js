@@ -118,16 +118,20 @@ const subscriptionSlice = createSlice({
         state.isLoading = false;
       })
 
+      // Handle toggle subscription
+      .addCase(toggleUserSubscription.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(toggleUserSubscription.fulfilled, (state, action) => {
-        const { channelId, isSubscribed } = action.payload;
-        // if (isSubscribed) {
-        //   state.subscribedChannels.push(channelId); // Add to subscribed list
-        //   state.subscribersCount += 1; // Increment count
-        // } else {
-        //   state.subscribedChannels = state.subscribedChannels.filter(id => id !== channelId); // Remove from list
-        //   state.subscribersCount -= 1; // Decrement count
-        // }
+        state.isLoading = false;
+        state.isSubscribed = !state.isSubscribed; 
+      })
+      .addCase(toggleUserSubscription.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       });
+      
   },
 });
 

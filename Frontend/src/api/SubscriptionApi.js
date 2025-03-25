@@ -7,7 +7,7 @@ const SUBS_API_URL = "http://localhost:8000/api/v1/subscriptions";
 // Get User Subscribers Count
 export const checkSubscriptionStatus = async (username) => {
   try {
-    const response = await axios.get(`${SUBS_API_URL}/status/${username}`);
+    const response = await api.get(`${SUBS_API_URL}/status/${username}`);
     console.log("checkSubscriptionStatus response", response);
     return response.data;
   } catch (error) {

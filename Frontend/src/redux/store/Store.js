@@ -5,6 +5,7 @@ import themeReducer from "../slices/ThemeSlice.js"
 import videoReducer from "../slices/Videoslice.js"
 import subscriptionreducer from "../slices/Subscriptionslice.js"
 import commentreducer from "../slices/CommentSlice.js"
+import likeReducer from "../slices/Likeslice.js"
 
 export const store = configureStore({
     reducer: {
@@ -14,5 +15,6 @@ export const store = configureStore({
         videos: videoReducer,
         subscriptions : subscriptionreducer,
         comments : commentreducer,
+        like: likeReducer,
     }
 })

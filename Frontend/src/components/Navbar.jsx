@@ -26,6 +26,7 @@ const Navbar = () => {
     console.log("Before dispatching logout");
     dispatch(logoutUser());
     console.log("After dispatching logout");
+    navigate("/");
     handleSuccess("logged out");
   };
 

@@ -43,8 +43,8 @@ export const getAllVideos = async () => {
 export const getVideoById = async (videoId) => {
   try {
     const response = await axios.get(`${VIDEO_API_URL}/${videoId}`);
-    console.log("response of 1 vid", response);
-    console.log("response.data of 1 vid", response.data);
+    // console.log("response of 1 vid", response);
+    // console.log("response.data of 1 vid", response.data);
     return response.data;
   } catch (error) {
     return {
