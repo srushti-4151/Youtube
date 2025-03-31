@@ -33,6 +33,9 @@ import {
   toggleCommentLikeThunk,
   toggleLike,
 } from "../../redux/slices/Likeslice.js";
+import RecommendedVideos from "../../components/RecommendedVideos.jsx";
+import { countView } from "../../api/viewsApi.js";
+import { addHistory } from "../../redux/slices/ViewSlice.js";
 
 const VideoPage = () => {
   const { id } = useParams(); // Get video ID from URL
@@ -58,12 +61,32 @@ const VideoPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!id) return;
+
+    const timeout = setTimeout(() => {
+      console.log("Adding to watch history:", id); 
+      countView(id); // Call API after delay
+      dispatch(addHistory(id));
+    }, 5000); // Wait 5 seconds before counting view
+
+    return () => clearTimeout(timeout); // Cleanup on unmount
+
+  }, [id]);
+
+
+  useEffect(() => {
+    console.log("Component Mounted");
+    return () => console.log("Component Unmounted");
+  }, []);
+  
+
   const { comments } = useSelector((state) => state.comments);
   const { selectedVideo, isLoading, error } = useSelector(
     (state) => state.videos
   );
   const { userChannelProfile } = useSelector((state) => state.auth);
-  console.log("commets", comments);
+  // console.log("commets", comments);
   // console.log("selectedVideo", selectedVideo);
   // console.log("userChannelProfile", userChannelProfile);
 
@@ -138,38 +161,6 @@ const VideoPage = () => {
       document.body.style.overflow = "auto";
     };
   }, [isOpen]);
-
-  // Dummy suggested videos data
-  const suggestedVideos = [
-    {
-      channlename: "channelname",
-      title: "How does a browser work?",
-      views: "100K Views",
-      time: "18 hours ago",
-      thumbnail: "thumb1.jpg",
-    },
-    {
-      channlename: "channelname",
-      title: "Building a multi-million dollar app",
-      views: "120K Views",
-      time: "20 hours ago",
-      thumbnail: "thumb2.jpg",
-    },
-    {
-      channlename: "channelname",
-      title: "Google and Pieces dropped updates",
-      views: "90K Views",
-      time: "15 hours ago",
-      thumbnail: "thumb3.jpg",
-    },
-    {
-      channlename: "channelname",
-      title: "How database works | Engineering",
-      views: "80K Views",
-      time: "10 hours ago",
-      thumbnail: "thumb4.jpg",
-    },
-  ];
 
   const handleDeleteComment = async (commentId) => {
     try {
@@ -265,7 +256,8 @@ const VideoPage = () => {
   };
 
   const { likeStatus, likeStatusComments } = useSelector((state) => state.like);
-  console.log("likeStatusComments.......................", likeStatusComments);
+  // console.log("likeStatus.......................", likeStatus);
+  // console.log("likeStatusComments.......................", likeStatusComments);
 
   useEffect(() => {
     dispatch(getVideoLikesStatusapi(id));
@@ -438,7 +430,7 @@ const VideoPage = () => {
                       </button>
                     </>
                   )}
-                  {!isAuthenticated && (
+                  {!isAuthenticated && likeStatus && (
                     <>
                       <button
                         className="flex gap-1 items-center bg-[#31302f] rounded-full rounded-r-none px-2 sm:px-3 text-xs sm:text-sm"
@@ -448,6 +440,7 @@ const VideoPage = () => {
                         }}
                       >
                         <BiLike size={20} />
+                        <p>{likeStatus.likesCount}</p>
                       </button>
 
                       <div className="border-l border-gray-300 h-5 bg-[#31302f]" />
@@ -460,6 +453,7 @@ const VideoPage = () => {
                         className="flex gap-1 items-center bg-[#31302f] rounded-full rounded-l-none px-2 py-2 text-xs sm:text-sm sm:px-3"
                       >
                         <BiDislike size={20} />
+                        <p>{likeStatus.dislikesCount}</p>
                       </button>
                     </>
                   )}
@@ -759,29 +753,7 @@ const VideoPage = () => {
           {/* Right Section: Suggested Videos */}
           <div className="lg:col-span-1 p-2">
             <h3 className="text-lg font-bold mb-4">Suggested Videos</h3>
-            <div className="space-y-4">
-              {suggestedVideos.map((video, index) => (
-                <div
-                  key={index}
-                  className="flex dark:bg-black bg-white dark:text-white text-black overflow-hidden"
-                >
-                  <img
-                    src={img}
-                    alt="Thumbnail"
-                    className="w-40 h-24 object-cover"
-                  />
-                  <div className="p-2 flex flex-col justify-between">
-                    <h3 className="text-sm font-semibold leading-tight">
-                      {video.title}
-                    </h3>
-                    <p className="text-xs text-gray-400">{video.channlename}</p>
-                    <p className="text-xs text-gray-400">
-                      {video.views} • {video.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <RecommendedVideos  currentVideoId={id} />
           </div>
 
           {/* Modal */}

@@ -12,6 +12,8 @@ import {
 import ImageCropper from "../utils/ImageCropper";
 import { useForm } from "react-hook-form";
 import { handleError, handleSuccess } from "../utils/toast";
+import { FiEdit } from "react-icons/fi";
+import defaultcover from "../assets/images/DefaultCoverimg.jpg"
 
 function ProfileLayout() {
   const { username } = useParams();
@@ -24,7 +26,7 @@ function ProfileLayout() {
   useEffect(() => {
     dispatch(fetchUserChannelProfile(username));
   }, [username, dispatch]);
-  
+
   const isProfileOwner =
     user && userChannelProfile && user.username === userChannelProfile.username;
 
@@ -74,7 +76,7 @@ function ProfileLayout() {
       if (result) {
         handleSuccess("Avatar updated successfully!");
         setAvatar(null); // Reset avatar state
-      setAvatarPreview(null); // Reset avatar preview
+        setAvatarPreview(null); // Reset avatar preview
         // Refresh user data
         dispatch(fetchUserChannelProfile(username));
       }
@@ -151,52 +153,46 @@ function ProfileLayout() {
   return (
     <div className="dark:bg-black bg-white text-black min-h-screen dark:text-white px-2 pt-10 pb-4 overflow-x-hidden md:px-8">
       {/* Cover Image */}
-      {/* <img
-        src={userChannelProfile.coverImage}
-        alt="coverimage"
-        className="object-cover object-center w-full h-40 rounded-lg"
-      /> */}
       <div className="relative">
-        <img
-          src={coverImagePreview || userChannelProfile.coverImage}
-          alt="coverimage"
-          className="object-cover object-center w-full h-40 rounded-lg"
-        />
+          <img
+            src={coverImagePreview || userChannelProfile.coverImage || defaultcover}
+            alt="coverimage"
+            className="object-cover object-center w-full h-48 rounded-lg"
+          />
+
         {isProfileOwner && (
           <button
             onClick={() => {
               setCropType("cover");
               setShowCropper(true);
             }}
-            className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded"
+            className="absolute bottom-4 right-4 bg-black/70 hover:bg-black/90 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm transition-all"
           >
-            Update Cover Image
+            <FiEdit className="text-base" />
+             Edit cover
           </button>
         )}
       </div>
 
       {/* Profile Header */}
       <div className="flex flex-col gap-4 mt-4 sm:flex-row md:mt-8">
-        {/* <img
-          src={userChannelProfile.avatar}
-          alt="Profile"
-          className="object-cover object-center mx-auto rounded-full size-24 md:size-40 sm:mx-0"
-        /> */}
         <div className="relative">
-          <img
-            src={avatarPreview || userChannelProfile.avatar}
-            alt="Profile"
-            className="object-cover object-center mx-auto rounded-full size-24 md:size-40 sm:mx-0"
-          />
+          {userChannelProfile.avatar && (
+            <img
+              src={avatarPreview || userChannelProfile.avatar}
+              alt="Profile"
+              className="object-cover object-center mx-auto rounded-full size-24 md:size-40 sm:mx-0"
+            />
+          )}
           {isProfileOwner && (
             <button
               onClick={() => {
                 setCropType("avatar");
                 setShowCropper(true);
               }}
-              className="absolute bottom-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-full"
+              className="absolute bottom-4 right-4 bg-black/70 hover:bg-black/90 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm transition-all"
             >
-              Update Avatar
+              <FiEdit className="text-base" />
             </button>
           )}
         </div>

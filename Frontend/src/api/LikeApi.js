@@ -3,6 +3,15 @@ import axios from "axios";
 
 const Like_API_URL = "http://localhost:8000/api/v1/likes";
 
+export const getLikedVideos = async () => {
+  try {
+    const response = await api.get(`${Like_API_URL}/videos`);
+    return response.data;
+  } catch (error) {
+    console.error("Error getLikedVideos:", error);
+    throw error;
+  }
+};
 
 export const toggleVideoLike = async (videoId, type) => {
   try {
@@ -25,7 +34,6 @@ export const getVideoLikesStatus = async (videoId) => {
     throw error;
   }
 };
-
 
 // Toggle Like/Dislike for Comment
 export const toggleCommentLike = async (commentId, type) => {

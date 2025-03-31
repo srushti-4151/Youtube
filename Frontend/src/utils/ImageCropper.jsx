@@ -14,11 +14,26 @@ const ImageCropper = ({ cropType, onCropComplete, onClose }) => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
+    // if (file) {
+    //   const reader = new FileReader();
+    //   reader.onload = () => setImage(reader.result);
+    //   reader.readAsDataURL(file);
+    // }
+    if (!file) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file); // Create a temporary URL for the file
+    img.onload = () => {
+      if (img.width < 1024 || img.height < 576) {
+        alert("Please upload an image of at least 1024x576 pixels.");
+        return;
+      }
+      
+      // Read the file only if it meets the resolution requirement
       const reader = new FileReader();
       reader.onload = () => setImage(reader.result);
       reader.readAsDataURL(file);
-    }
+    };
   };
 
   const handleCropComplete = (_, croppedPixels) => {
@@ -33,8 +48,8 @@ const ImageCropper = ({ cropType, onCropComplete, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-4 rounded-lg">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="dark:bg-gray-800 bg-gray-200 p-4 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Crop {cropType}</h2>
         
         <input type="file" accept="image/*" onChange={handleImageChange} />
@@ -54,10 +69,10 @@ const ImageCropper = ({ cropType, onCropComplete, onClose }) => {
         )}
 
         <div className="flex justify-between mt-3">
-          <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={handleSave}>
+          <button className="bg-[#AA60C8] text-white px-3 py-1 rounded" onClick={handleSave}>
             Crop & Save
           </button>
-          <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={onClose}>
+          <button className="bg-[#BE5985] text-white px-3 py-1 rounded" onClick={onClose}>
             Cancel
           </button>
         </div>

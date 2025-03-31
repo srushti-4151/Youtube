@@ -1,5 +1,26 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getCommentLikesStatus, getVideoLikesStatus, toggleCommentLike, toggleVideoLike } from "../../api/LikeApi.js";
+import {
+  getCommentLikesStatus,
+  getLikedVideos,
+  getVideoLikesStatus,
+  toggleCommentLike,
+  toggleVideoLike,
+} from "../../api/LikeApi.js";
+
+export const fetchLikedVideos = createAsyncThunk(
+  "like/fetchLikedVideos",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await getLikedVideos();
+      console.log("getLikedVideos API Response.data :", response);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Something went wrong"
+      );
+    }
+  }
+);
 
 // Toggle Like/Dislike Thunk
 export const toggleLike = createAsyncThunk(
@@ -21,9 +42,9 @@ export const toggleLike = createAsyncThunk(
 // Fetch Like Status Thunk
 export const getVideoLikesStatusapi = createAsyncThunk(
   "like/getVideoLikesStatusapi",
-  async ( videoId, { rejectWithValue }) => { 
+  async (videoId, { rejectWithValue }) => {
     try {
-      console.log("videooooo id" ,videoId)
+      // console.log("videooooo id" ,videoId)
       const response = await getVideoLikesStatus(videoId);
       // console.log("Like getVideoLikesStatus API Response:", response);
       return response.data;
@@ -68,6 +89,8 @@ export const getCommentLikesStatusapi = createAsyncThunk(
 const likeSlice = createSlice({
   name: "like",
   initialState: {
+    likeVideos: [],
+    isvideosLoading: false,
     likeStatus: null,
     likeStatusComments: {},
     status: "idle",
@@ -76,12 +99,23 @@ const likeSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(fetchLikedVideos.pending, (state) => {
+        state.isvideosLoading = true;
+      })
+      .addCase(fetchLikedVideos.fulfilled, (state, action) => {
+        state.likeVideos = action.payload.videos;
+        state.isvideosLoading = false;
+      })
+      .addCase(fetchLikedVideos.rejected, (state, action) => {
+        state.error = action.payload;
+        state.isvideosLoading = false;
+      })
+
       .addCase(toggleLike.pending, (state) => {
         state.status = "loading";
       })
       .addCase(toggleLike.fulfilled, (state, action) => {
         state.status = "succeeded";
-        
       })
       .addCase(toggleLike.rejected, (state, action) => {
         state.status = "failed";
@@ -99,7 +133,6 @@ const likeSlice = createSlice({
         state.status = "failed";
         state.error = action.payload;
       })
-
 
       .addCase(toggleCommentLikeThunk.pending, (state) => {
         state.status = "loading";

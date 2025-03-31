@@ -3,6 +3,21 @@ import { api } from "./AuthApi";
 
 const VIDEO_API_URL = "http://localhost:8000/api/v1/videos";
 
+
+export const uploadNewVideo = async (formData) => {
+  try {
+    console.log("Api",formData)
+    const response = await api.post(`${VIDEO_API_URL}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error("API Upload Error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
 // Fetch all videos
 // export const getAllVideos = async () => {
 //   try {
@@ -43,7 +58,7 @@ export const getAllVideos = async () => {
 export const getVideoById = async (videoId) => {
   try {
     const response = await axios.get(`${VIDEO_API_URL}/${videoId}`);
-    // console.log("response of 1 vid", response);
+    console.log("response of 1 vid", response);
     // console.log("response.data of 1 vid", response.data);
     return response.data;
   } catch (error) {
@@ -51,18 +66,6 @@ export const getVideoById = async (videoId) => {
       success: false,
       message: error.response?.data?.message || "An error occurred",
     };
-  }
-};
-
-export const uploadNewVideo = async (formData) => {
-  try {
-    const response = await api.post(VIDEO_API_URL, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data.data;
-  } catch (error) {
-    console.error("API Upload Error:", error.response?.data || error.message);
-    throw error;
   }
 };
 
@@ -77,5 +80,53 @@ export const getAllVideosById = async (userId) => {
       success: false,
       message: error.response?.data?.message || "An error occurred",
     };
+  }
+};
+
+// export const updateVideoDetails = async (videoId, updateData) => {
+//   try {
+//     console.log("dataaaaaaaaaa", updateData)
+//     const response = await api.patch(
+//       `${VIDEO_API_URL}/${videoId}`,
+//       updateData,
+//       {
+//         headers: {
+//           "Content-Type": "multipart/form-data",
+//         },
+//       }
+//     );
+//     console.log("update res", response)
+//     return response.data;
+//   } catch (error) {
+//     console.error("Update error:", error.response?.data || error.message);
+//     throw error;
+//   }
+// };
+
+export const updateVideoDetails = async (videoId, formData) => {
+  try {
+    const response = await api.patch(
+      `${VIDEO_API_URL}/${videoId}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const deleteVideoById = async (videoId) => {
+  try {
+    const response = await api.delete(`${VIDEO_API_URL}/${videoId}`);
+    console.log("delete res", response)
+    return response.data;
+  } catch (error) {
+    console.error("Delete error:", error.response?.data?.message || error.message);
+    throw error;
   }
 };

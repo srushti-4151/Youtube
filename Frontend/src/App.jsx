@@ -24,6 +24,7 @@ import {
 } from "./redux/slices/Authslice";
 import Login from "./pages/LoginSignup/Login";
 import Signup from "./pages/LoginSignup/Signup";
+import PlayListPage from "./pages/PlaylistPage/PlayListPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -68,8 +69,10 @@ function App() {
               <Route path="/liked-videos" element={<LikedVideos />} />
               <Route path="/history" element={<History />} />
               <Route path="/my-content" element={<MyContent />} />
-              <Route path="/collection" element={<Collection />} />
               <Route path="/subscribers" element={<Subscribers />} />
+              <Route path="playlists" element={<PlaylistSection />} />
+              <Route path="/playlist/:playlistId" element={<PlayListPage />} />
+
               <Route path="/profile/:username" element={<ProfileLayout />}>
                 <Route path="videos" element={<VideoSection />} />
                 <Route path="playlists" element={<PlaylistSection />} />

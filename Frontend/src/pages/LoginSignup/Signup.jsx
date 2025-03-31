@@ -233,7 +233,7 @@ const Signup = () => {
           <label className="block">Avatar</label>
           <button
             type="button"
-            className="bg-blue-500 text-white px-4 py-1 rounded cursor-pointer"
+            className="bg-[#7E60BF] hover:bg-[#433878] rounded-2xl text-white px-4 py-1.5 cursor-pointer transition-all duration-300"
             onClick={() => {
               setCropType("avatar");
               setShowCropper(true);
@@ -255,7 +255,7 @@ const Signup = () => {
           <label className="block">Cover Image</label>
           <button
             type="button"
-            className="bg-green-500 text-white px-4 py-1 rounded cursor-pointer"
+            className="bg-[#7E60BF] hover:bg-[#433878] text-white px-4 py-1.5 rounded-2xl cursor-pointer transition-all duration-300"
             onClick={() => {
               setCropType("cover");
               setShowCropper(true);

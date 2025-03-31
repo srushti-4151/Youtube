@@ -89,7 +89,7 @@ import { Tweet } from "../models/tweet.model.js";
 
 const getVideoLikesStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const userId = req.user?._id;
+  const userId = req.user?._id || null;
 
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
     throw new ApiError(400, "Invalid Video ID");
@@ -122,7 +122,7 @@ const getVideoLikesStatus = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        isLiked: {
+        isLiked: userId ? {
           $in: [
             new mongoose.Types.ObjectId(userId),
             {
@@ -139,8 +139,8 @@ const getVideoLikesStatus = asyncHandler(async (req, res) => {
               },
             },
           ],
-        },
-        isDisliked: {
+        } : false,
+        isDisliked: userId ? {
           $in: [
             new mongoose.Types.ObjectId(userId),
             {
@@ -157,7 +157,7 @@ const getVideoLikesStatus = asyncHandler(async (req, res) => {
               },
             },
           ],
-        },
+        } : false,
       },
     },
     { $project: { userReaction: 0 } }, // Remove unnecessary fields
@@ -436,46 +436,215 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
   }
 });
 
-const getLikedVideos = asyncHandler(async (req, res) => {
-  //TODO: get all liked videos
-  // What is populate?
-  // Mongoose’s .populate() replaces the video field (which is an ObjectId) with the actual video document from the Video collection.
-  // Why?
-  // Normally, a Like document stores only a videoId, but we need full video details (title, thumbnail, etc.).
-  // How?
-  // path: "video" → Tells Mongoose to replace videoId with actual video data.
-  // select: "..." → Fetches only the required fields (_id, thumbnail, etc.).
-  // match: { isPublished: true } → Filters out unpublished videos.
-  // If a video is unpublished, populate() sets video: null.
+// const getLikedVideos = asyncHandler(async (req, res) => {
+//   //TODO: get all liked videos
+//   // What is populate?
+//   // Mongoose’s .populate() replaces the video field (which is an ObjectId) with the actual video document from the Video collection.
+//   // Why?
+//   // Normally, a Like document stores only a videoId, but we need full video details (title, thumbnail, etc.).
+//   // How?
+//   // path: "video" → Tells Mongoose to replace videoId with actual video data.
+//   // select: "..." → Fetches only the required fields (_id, thumbnail, etc.).
+//   // match: { isPublished: true } → Filters out unpublished videos.
+//   // If a video is unpublished, populate() sets video: null.
 
+//   const { page = 1, limit = 10 } = req.query;
+//   // Validate page number
+//   if (page < 1) {
+//     throw new ApiError(400, "Invalid page number");
+//   }
+
+//   const likes = await Like.find({
+//     likedBy: req.user?._id,
+//     video: { $exists: true },
+//   })
+//     .populate({
+//       path: "video",
+//       select: "_id thumbnail title description duration views isPublished",
+//       match: { isPublished: true }, //If a video is unpublished then populate() sets video: null.
+//     })
+//     .skip((page - 1) * limit)
+//     .limit(limit);
+
+//   //Since .populate() returns null for unpublished videos, we filter them out to ensure only published videos are shown.
+//   const filteredLikes = likes.filter((like) => like.video !== null);
+
+//   const totalLikedVideos = await Like.countDocuments({
+//     likedBy: req.user?._id,
+//     video: { $exists: true },
+//   });
+
+//   // Calculate pagination details
+//   const totalPages = Math.ceil(totalLikedVideos / limit); //rounds a number up to the nearest integer.
+//   const pagination = {
+//     totalPages,
+//     currentPage: Number(page),
+//     hasNextPage: page < totalPages,
+//     hasPreviousPage: page > 1,
+//     totalLikedVideos,
+//   };
+
+//   if (filteredLikes.length === 0) {
+//     return res.status(200).json(
+//       new ApiResponse(
+//         200,
+//         {
+//           videos: [],
+//           pagination,
+//         },
+//         "No liked videos found"
+//       )
+//     );
+//   }
+
+//   // Extract only video details from likes
+//   //The filteredLikes array contains Like objects, each with a populated video field.
+//   //.map(like => like.video) extracts only the video details from each Like object.
+
+//   const videos = filteredLikes.map((like) => like.video);
+
+//   return res.status(200).json(
+//     new ApiResponse(
+//       200,
+//       {
+//         videos,
+//         pagination,
+//       },
+//       "Liked videos fetched successfully"
+//     )
+//   );
+// });
+
+// const getLikedVideos = asyncHandler(async (req, res) => {
+//   const { page = 1, limit = 10 } = req.query;
+//   if (page < 1) {
+//     throw new ApiError(400, "Invalid page number");
+//   }
+
+//   const skip = (page - 1) * limit;
+
+//   const results = await Like.aggregate([
+//     // Match likes by the logged-in user
+//     { $match: { likedBy: req.user?._id } },
+
+//     // Lookup (similar to populate) to get video details
+//     {
+//       $lookup: {
+//         from: "videos", // The collection name
+//         localField: "video",
+//         foreignField: "_id",
+//         as: "videoData",
+//       },
+//     },
+
+//     // Unwind to flatten the array created by $lookup
+//     { $unwind: "$videoData" },
+
+//     // Filter only published videos
+//     { $match: { "videoData.isPublished": true } },
+
+//     // Project (select) only required fields
+//     {
+//       $project: {
+//         _id: 0, // Exclude the _id of the Like document
+//         video: {
+//           _id: "$videoData._id",
+//           thumbnail: "$videoData.thumbnail",
+//           title: "$videoData.title",
+//           description: "$videoData.description",
+//           duration: "$videoData.duration",
+//           views: "$videoData.views",
+//         },
+//       },
+//     },
+
+//     // Pagination
+//     { $skip: skip },
+//     { $limit: Number(limit) },
+//   ]);
+
+//   // Get total count of liked videos
+//   const totalLikedVideos = await Like.countDocuments({
+//     likedBy: req.user?._id,
+//   });
+
+//   const totalPages = Math.ceil(totalLikedVideos / limit);
+//   const pagination = {
+//     totalPages,
+//     currentPage: Number(page),
+//     hasNextPage: page < totalPages,
+//     hasPreviousPage: page > 1,
+//     totalLikedVideos,
+//   };
+
+//   return res.status(200).json(
+//     new ApiResponse(200, { videos: results.map((v) => v.video), pagination }, "Liked videos fetched successfully")
+//   );
+// });
+const getLikedVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
-  // Validate page number
   if (page < 1) {
     throw new ApiError(400, "Invalid page number");
   }
 
-  const likes = await Like.find({
-    likedBy: req.user?._id,
-    video: { $exists: true },
-  })
-    .populate({
-      path: "video",
-      select: "_id thumbnail title description duration views isPublished",
-      match: { isPublished: true }, //If a video is unpublished then populate() sets video: null.
-    })
-    .skip((page - 1) * limit)
-    .limit(limit);
+  const skip = (page - 1) * limit;
 
-  //Since .populate() returns null for unpublished videos, we filter them out to ensure only published videos are shown.
-  const filteredLikes = likes.filter((like) => like.video !== null);
+  const results = await Like.aggregate([
+    { $match: { likedBy: req.user?._id } }, // Match likes by user
 
-  const totalLikedVideos = await Like.countDocuments({
-    likedBy: req.user?._id,
-    video: { $exists: true },
-  });
+    {
+      $lookup: {
+        from: "videos", // Join with videos collection
+        localField: "video",
+        foreignField: "_id",
+        as: "videoData",
+      },
+    },
 
-  // Calculate pagination details
-  const totalPages = Math.ceil(totalLikedVideos / limit); //rounds a number up to the nearest integer.
+    { $unwind: "$videoData" }, // Flatten the array
+
+    { $match: { "videoData.isPublished": true } }, // Only published videos
+
+    {
+      $lookup: {
+        from: "users", // Join with users collection to get owner details
+        localField: "videoData.owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              _id: 1, // Always include _id
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$owner" },
+
+    {
+      $project: {
+        _id: 0,
+        video: {
+          _id: "$videoData._id",
+          thumbnail: "$videoData.thumbnail",
+          title: "$videoData.title",
+          description: "$videoData.description",
+          duration: "$videoData.duration",
+          views: "$videoData.views",
+          owner: "$owner", // Includes only selected fields
+        },
+      },
+    },
+    { $skip: skip },
+    { $limit: Number(limit) },
+  ]);
+
+  const totalLikedVideos = await Like.countDocuments({ likedBy: req.user?._id });
+  const totalPages = Math.ceil(totalLikedVideos / limit);
   const pagination = {
     totalPages,
     currentPage: Number(page),
@@ -484,35 +653,11 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     totalLikedVideos,
   };
 
-  if (filteredLikes.length === 0) {
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          videos: [],
-          pagination,
-        },
-        "No liked videos found"
-      )
-    );
-  }
-
-  // Extract only video details from likes
-  //The filteredLikes array contains Like objects, each with a populated video field.
-  //.map(like => like.video) extracts only the video details from each Like object.
-
-  const videos = filteredLikes.map((like) => like.video);
-
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        videos,
-        pagination,
-      },
-      "Liked videos fetched successfully"
-    )
+    new ApiResponse(200, { videos: results.map((v) => v.video), pagination }, "Liked videos fetched successfully")
   );
 });
+
+
 
 export {getVideoLikesStatus,  getCommentLikesStatus, getTweetLikesStatus, toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };

@@ -4,6 +4,7 @@ import thumb1 from "../../assets/images/img1.jpg";
 import NoVideo from "../../components/NoVideo";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllVideos } from "../../redux/slices/Videoslice";
+import Loader from "../../components/Loader";
 
 const Home = () => {
   
@@ -19,9 +20,9 @@ const Home = () => {
   return (
     <div className="w-full p-4">
       {isLoading ? (
-        <p>Loading videos...</p>
+        <Loader />
       ) : !videos || videos.length === 0 ? ( // Defensive check
-        <NoVideo />
+        <div className="flx justify-center items-center"> No video </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
           {videos.map((video, index) => (

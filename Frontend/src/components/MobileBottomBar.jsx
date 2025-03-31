@@ -1,14 +1,15 @@
+import React from 'react'
 import { NavLink } from "react-router-dom";
 import { FaHome, FaHistory, FaFolder, FaUsers } from "react-icons/fa";
 
 const MobileBottomBar = () => {
   return (
-    <div className="flex md:hidden fixed bottom-0 left-0 w-full bg-black text-white p-3 border-t border-gray-700 justify-around">
+    <div className="z-50 flex md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-black p-3 border-t border-gray-700 justify-around">
       <NavLink
         to="/"
         className={({ isActive }) =>
           `flex flex-col items-center ${
-            isActive ? "text-white" : "text-gray-400"
+            isActive ? "dark:text-white text-black" : "text-gray-dark:text-gray-400 text-gray-600"
           }`
         }
       >
@@ -20,7 +21,7 @@ const MobileBottomBar = () => {
         to="/history"
         className={({ isActive }) =>
           `flex flex-col items-center ${
-            isActive ? "text-white" : "text-gray-400"
+            isActive ? "dark:text-white text-black" : "text-gray-dark:text-gray-400 text-gray-600"
           }`
         }
       >
@@ -32,7 +33,7 @@ const MobileBottomBar = () => {
         to="/collection"
         className={({ isActive }) =>
           `flex flex-col items-center ${
-            isActive ? "text-white" : "text-gray-400"
+            isActive ? "dark:text-white text-black" : "text-gray-dark:text-gray-400 text-gray-600"
           }`
         }
       >
@@ -44,7 +45,7 @@ const MobileBottomBar = () => {
         to="/subscribers"
         className={({ isActive }) =>
           `flex flex-col items-center ${
-            isActive ? "text-white" : "text-gray-400"
+            isActive ? "dark:text-white text-black" : "text-gray-dark:text-gray-400 text-gray-600"
           }`
         }
       >

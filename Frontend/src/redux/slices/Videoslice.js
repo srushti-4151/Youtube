@@ -1,10 +1,29 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
+  deleteVideoById,
   getAllVideos,
   getAllVideosById,
   getVideoById,
-  uploadNewVideo
+  updateVideoDetails,
+  uploadNewVideo,
 } from "../../api/VideoApi.js";
+
+
+// Upload a new video
+export const uploadVideo = createAsyncThunk(
+  "videos/uploadVideo",
+  async (formData, { rejectWithValue }) => {
+    try {
+      console.log("redux",formData)
+      const uploadedVideo = await uploadNewVideo(formData);
+      // dispatch(fetchUserVideos(uploadedVideo.owner)); // Refresh user videos after upload
+      return uploadedVideo;
+    } catch (error) {
+      console.error("Upload error:", error.response?.data || error.message);
+      return rejectWithValue(error.response?.data?.message || "Upload failed");
+    }
+  }
+);
 
 // Fetch all videos from API
 export const fetchAllVideos = createAsyncThunk(
@@ -45,18 +64,43 @@ export const fetchUserVideos = createAsyncThunk(
   }
 );
 
-// Upload a new video
-export const uploadVideo = createAsyncThunk("videos/uploadVideo", async (formData, { rejectWithValue }) => {
-  try {
-    const uploadedVideo = await uploadNewVideo(formData);
-    // dispatch(fetchUserVideos(uploadedVideo.owner)); // Refresh user videos after upload
-    return uploadedVideo;
-  } catch (error) {
-    console.error("Upload error:", error.response?.data || error.message);
-    return rejectWithValue(error.response?.data?.message || "Upload failed");
-  }
-});
+// export const updateVideo = createAsyncThunk(
+//   "videos/update",
+//   async ({ videoId, updatedata }, { rejectWithValue }) => {
+//     try {
+//       console.log("dataaaaaaaaaain slice", updatedata, videoId)
+//       const response = await updateVideoDetails(videoId, updatedata);
+//       return response;
+//     } catch (error) {
+//       return rejectWithValue(error.response?.data?.message || "update failed");
+//     }
+//   }
+// );
 
+export const updateVideo = createAsyncThunk(
+  "videos/update",
+  async ({ videoId, formData }, { rejectWithValue }) => {  // Change updateData to formData
+    try {
+      const response = await updateVideoDetails(videoId, formData);
+      return response.data;  // Make sure to return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "update failed");
+    }
+  }
+);
+
+export const deleteVideo = createAsyncThunk(
+  "videos/delete",
+  async (videoId, { rejectWithValue }) => {
+    try {
+      console.log("video Id", videoId)
+      const response = await deleteVideoById(videoId);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Delete failed");
+    }
+  }
+);
 
 const initialState = {
   videos: [],
@@ -64,6 +108,8 @@ const initialState = {
   pagination: null, // Stores pagination details
   selectedVideo: null,
   isLoading: false,
+  isUpdating: false,
+  isDeleting: false,
   isUploading: false,
   error: null,
 };
@@ -75,7 +121,7 @@ const videoSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-    // Fetch all videos
+      // Fetch all videos
       .addCase(fetchAllVideos.pending, (state) => {
         state.isLoading = true;
       })
@@ -106,8 +152,8 @@ const videoSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(fetchUserVideos.fulfilled, (state, action) => {
-        // console.log("Fetched User Videos Data:", action.payload); 
-        state.userVideos = action.payload.data.videos || []; 
+        // console.log("Fetched User Videos Data:", action.payload);
+        state.userVideos = action.payload.data.videos || [];
         state.pagination = action.payload.data.pagination || null;
         state.isLoading = false;
       })
@@ -118,7 +164,7 @@ const videoSlice = createSlice({
 
       // Upload video
       .addCase(uploadVideo.pending, (state) => {
-        state.isUploading = true; 
+        state.isUploading = true;
       })
       .addCase(uploadVideo.fulfilled, (state, action) => {
         state.isUploading = false;
@@ -126,7 +172,31 @@ const videoSlice = createSlice({
       .addCase(uploadVideo.rejected, (state, action) => {
         state.isUploading = false;
         state.error = action.payload;
-      });  
+      })
+
+      // Update video
+      .addCase(updateVideo.pending, (state) => {
+        state.isUpdating = true;
+      })
+      .addCase(updateVideo.fulfilled, (state, action) => {
+        state.isUpdating = false;
+      })
+      .addCase(updateVideo.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.error = action.payload;
+      })
+
+      // Delete video
+      .addCase(deleteVideo.pending, (state) => {
+        state.isDeleting = true;
+      })
+      .addCase(deleteVideo.fulfilled, (state, action) => {
+        state.isDeleting = false;
+      })
+      .addCase(deleteVideo.rejected, (state, action) => {
+        state.isDeleting = false;
+        state.error = action.payload;
+      });
   },
 });
 

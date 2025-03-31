@@ -8,6 +8,7 @@ import {
   deleteFromCloudinary,
   uploadOnCloudinary,
 } from "../utils/Cloudinary.js";
+import { VideoView } from "../models/videoView.model.js";
 
 //videos uploaded by a specific user (uploaded by that user)
 const getAllVideosById = asyncHandler(async (req, res) => {
@@ -89,6 +90,20 @@ const getAllVideosById = asyncHandler(async (req, res) => {
     // Get paginated videos with owner details
     const videos = await Video.aggregate([
       { $match: queryObject },
+      // Join with views collection to count total views per video
+      {
+        $lookup: {
+          from: "videoviews",
+          localField: "_id",
+          foreignField: "video",
+          as: "views",
+        },
+      },
+      {
+        $addFields: {
+          views: { $size: "$views" }, // Count total views
+        },
+      },
       {
         $lookup: {
           from: "users",
@@ -187,6 +202,20 @@ const getAllVideos = asyncHandler(async (req, res) => {
         },
       },
       { $unwind: "$owner" }, //ensures that each video has exactly one owner object.
+      {
+        $lookup: {
+          from: "videoviews", // Count views from VideoView model
+          localField: "_id",
+          foreignField: "video",
+          as: "views",
+        },
+      },
+      // Add a view count field
+      {
+        $addFields: {
+          views: { $size: "$views" },
+        },
+      },
       { $sort: sortObject },
       { $skip: (Number(page) - 1) * Number(limit) }, //Skip  videos (start from the beginning).
       { $limit: Number(limit) }, // makes sure we only fetch limit videos.
@@ -214,53 +243,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
   } catch (error) {
     throw new ApiError(500, "Failed to fetch videos");
   }
-});
-
-const publishAVideo = asyncHandler(async (req, res) => {
-  // TODO: get video, upload to cloudinary, create video
-  const { title, description } = req.body;
-
-  if (!title || !description) {
-    throw new ApiError(400, "Title and Decsription are required.");
-  }
-
-  const videoLocalPath = req.files?.videoFile[0]?.path;
-  const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
-
-  if (!videoLocalPath) {
-    throw new ApiError(400, "Video file is required!");
-  }
-
-  if (!thumbnailLocalPath) {
-    throw new ApiError(400, "Thumbnail is required!");
-  }
-
-  const videoFile = await uploadOnCloudinary(videoLocalPath);
-  if (!videoFile) {
-    throw new ApiError(500, "Failed to upload video file");
-  }
-
-  const thumbnailFile = await uploadOnCloudinary(thumbnailLocalPath);
-  if (!thumbnailFile) {
-    throw new ApiError(500, "Failed to upload thumbnail file"); // Fixed error message
-  }
-
-  const video = await Video.create({
-    videoFile: videoFile.url,
-    thumbnail: thumbnailFile.url,
-    title,
-    description,
-    duration: videoFile.duration,
-    owner: req.user._id,
-  });
-
-  if (!video) {
-    throw new ApiError(500, "Failed to publish video!");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, video, "Video published successfully!"));
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
@@ -298,8 +280,18 @@ const getVideoById = asyncHandler(async (req, res) => {
           as: "owner",
         },
       },
+      // Lookup views collection to count views
+      {
+        $lookup: {
+          from: "videoviews", // The collection name for VideoView model
+          localField: "_id",
+          foreignField: "video",
+          as: "views",
+        },
+      },
       {
         $addFields: {
+          views: { $size: "$views" },
           // like count
           //likesCount: { $size: "$likes" },
           likesCount: {
@@ -376,6 +368,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         $project: {
           // Remove Unnecessary Fields
           likes: 0,
+          // views: 0, // Don't return full views array
         },
       },
     ]);
@@ -391,97 +384,228 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
 });
 
+const publishAVideo = asyncHandler(async (req, res) => {
+  // TODO: get video, upload to cloudinary, create video
+  const { title, description } = req.body;
+
+  if (!title || !description) {
+    throw new ApiError(400, "Title and Decsription are required.");
+  }
+  console.log("req.body:", req.body);
+
+  console.log("req.files:", req.files);
+
+
+  const videoLocalPath = req.files?.videoFile[0]?.path;
+  const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
+
+  if (!videoLocalPath) {
+    throw new ApiError(400, "Video file is required!");
+  }
+
+  if (!thumbnailLocalPath) {
+    throw new ApiError(400, "Thumbnail is required!");
+  }
+
+  
+
+  const videoFile = await uploadOnCloudinary(videoLocalPath);
+  console.log("videoloacl",videoLocalPath)
+  console.log("videoFile",videoFile)
+  if (!videoFile) {
+    throw new ApiError(500, "Failed to upload video file");
+  }
+
+  const thumbnailFile = await uploadOnCloudinary(thumbnailLocalPath);
+  if (!thumbnailFile) {
+    throw new ApiError(500, "Failed to upload thumbnail file"); // Fixed error message
+  }
+
+  const video = await Video.create({
+    videoFile: videoFile.url,
+    thumbnail: thumbnailFile.url,
+    title,
+    description,
+    duration: videoFile.duration,
+    owner: req.user._id,
+  });
+
+  if (!video) {
+    throw new ApiError(500, "Failed to publish video!");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video published successfully!"));
+});
+
+// const updateVideo = asyncHandler(async (req, res) => {
+//   const { videoId } = req.params;
+//   const { title, description } = req.body;
+//   const updateData = {};
+
+//   //   console.log("req.params",req.params);
+//   //   console.log("req.body",req.body);
+
+//   // Validate videoId
+//   if (!isValidObjectId(videoId)) {
+//     throw new ApiError(400, "Invalid video ID");
+//   }
+
+//   // Validate and update title
+//   if (title) {
+//     if (title.length > 120) {
+//       throw new ApiError(400, "Title exceeds 120 characters");
+//     }
+//     updateData.title = title;
+//   }
+
+//   // Validate and update description
+//   if (description) {
+//     if (description.length > 2000) {
+//       throw new ApiError(400, "Description exceeds 2000 characters");
+//     }
+//     updateData.description = description;
+//   }
+
+//   // Handle thumbnail update
+//   if (req.file) {
+//     try {
+//       // Validate file format
+//       //   if (!["image/jpeg", "image/png"].includes(req.file.mimetype)) {
+//       //     throw new ApiError(400, "Invalid thumbnail format (JPEG/PNG only)");
+//       //   }
+
+//       // Validate file size (max 2MB)
+//       if (req.file.size > 2_097_152) {
+//         throw new ApiError(400, "Thumbnail exceeds 2MB size limit");
+//       }
+
+//       // Fetch the existing video
+//       const existingVideo = await Video.findById(videoId);
+//       if (!existingVideo) {
+//         throw new ApiError(404, "Video not found");
+//       }
+
+//       // Delete old thumbnail from Cloudinary if it exists
+//       if (existingVideo.thumbnail) {
+//         await deleteFromCloudinary(existingVideo.thumbnail);
+//         console.log("Old thumbnail deleted from Cloudinary");
+//       }
+
+//       // Upload new thumbnail
+//       const uploadResult = await uploadOnCloudinary(req.file.path);
+//       if (!uploadResult?.url) {
+//         throw new ApiError(500, "Cloudinary upload failed");
+//       }
+
+//       // Store new thumbnail URL
+//       updateData.thumbnail = uploadResult.url;
+//     } catch (uploadError) {
+//       throw uploadError;
+//     }
+//   }
+
+//   // Ensure at least one field is being updated
+//   if (Object.keys(updateData).length === 0) {
+//     throw new ApiError(400, "No valid update fields provided");
+//   }
+
+//   // Update the video document in MongoDB
+//   const videoAfterUpdate = await Video.findByIdAndUpdate(
+//     videoId,
+//     { $set: updateData },
+//     {
+//       new: true, //Returns the updated document instead of the old one.
+//       projection: { __v: 0, internalState: 0 }, // __v :0 Removes Mongoose version key (used for version tracking).
+//       //internalState: 0 → Removes a custom field if it exists in your schema.
+//     }
+//   );
+
+//   // If no video was found
+//   if (!videoAfterUpdate) {
+//     throw new ApiError(404, "Video not found or update failed");
+//   }
+
+//   // Return the updated video
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, videoAfterUpdate, "Video updated successfully"));
+// });
+
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { title, description } = req.body;
   const updateData = {};
+  console.log("req.params",req.params);
+  console.log("req.body",req.body);
 
-  //   console.log("req.params",req.params);
-  //   console.log("req.body",req.body);
-
-  // Validate videoId
+  // 1. Validate videoId first
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video ID");
   }
 
-  // Validate and update title
-  if (title) {
+  // 2. Fetch existing video ONCE at start
+  const existingVideo = await Video.findById(videoId).select('-__v -internalState');
+  if (!existingVideo) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  // 3. Smart Field Updates (only if changed)
+  if (title !== undefined && title !== existingVideo.title) {
     if (title.length > 120) {
       throw new ApiError(400, "Title exceeds 120 characters");
     }
     updateData.title = title;
   }
 
-  // Validate and update description
-  if (description) {
+  if (description !== undefined && description !== existingVideo.description) {
     if (description.length > 2000) {
       throw new ApiError(400, "Description exceeds 2000 characters");
     }
     updateData.description = description;
   }
 
-  // Handle thumbnail update
+  // 4. Thumbnail Handling (with transaction safety)
   if (req.file) {
     try {
-      // Validate file format
-      //   if (!["image/jpeg", "image/png"].includes(req.file.mimetype)) {
-      //     throw new ApiError(400, "Invalid thumbnail format (JPEG/PNG only)");
-      //   }
-
-      // Validate file size (max 2MB)
+      // Validate file
       if (req.file.size > 2_097_152) {
         throw new ApiError(400, "Thumbnail exceeds 2MB size limit");
       }
 
-      // Fetch the existing video
-      const existingVideo = await Video.findById(videoId);
-      if (!existingVideo) {
-        throw new ApiError(404, "Video not found");
-      }
-
-      // Delete old thumbnail from Cloudinary if it exists
-      if (existingVideo.thumbnail) {
-        await deleteFromCloudinary(existingVideo.thumbnail);
-        console.log("Old thumbnail deleted from Cloudinary");
-      }
-
-      // Upload new thumbnail
+      // Upload new thumbnail first (fail fast)
       const uploadResult = await uploadOnCloudinary(req.file.path);
       if (!uploadResult?.url) {
         throw new ApiError(500, "Cloudinary upload failed");
       }
 
-      // Store new thumbnail URL
+      // Only delete old thumbnail AFTER successful upload
+      if (existingVideo.thumbnail) {
+        await deleteFromCloudinary(existingVideo.thumbnail);
+      }
+
       updateData.thumbnail = uploadResult.url;
-    } catch (uploadError) {
-      throw uploadError;
+    } catch (error) {
+      // Clean up failed upload
+      if (req.file.path) fs.unlinkSync(req.file.path);
+      throw error;
     }
   }
 
-  // Ensure at least one field is being updated
+  // 5. Final Update Decision
   if (Object.keys(updateData).length === 0) {
-    throw new ApiError(400, "No valid update fields provided");
+    return res.status(200)
+      .json(new ApiResponse(200, existingVideo, "No changes detected"));
   }
 
-  // Update the video document in MongoDB
   const videoAfterUpdate = await Video.findByIdAndUpdate(
     videoId,
     { $set: updateData },
-    {
-      new: true, //Returns the updated document instead of the old one.
-      projection: { __v: 0, internalState: 0 }, // __v :0 Removes Mongoose version key (used for version tracking).
-      //internalState: 0 → Removes a custom field if it exists in your schema.
-    }
+    { new: true, projection: { __v: 0, internalState: 0 } }
   );
 
-  // If no video was found
-  if (!videoAfterUpdate) {
-    throw new ApiError(404, "Video not found or update failed");
-  }
-
-  // Return the updated video
-  return res
-    .status(200)
+  return res.status(200)
     .json(new ApiResponse(200, videoAfterUpdate, "Video updated successfully"));
 });
 

@@ -4,13 +4,14 @@ import { fetchUserVideos, uploadVideo } from "../../redux/slices/Videoslice.js";
 import VideoCard from "../../components/VideoCard.jsx";
 import NoVideo from "../../components/NoVideo";
 import { handleError, handleSuccess } from "../../utils/toast.js";
+import { FiUpload } from "react-icons/fi";
 
 const MyContent = () => {
   const dispatch = useDispatch();
   const { userVideos, isLoading, isUploading } = useSelector(
     (state) => state.videos
   );
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   const [showModal, setShowModal] = useState(false);
   const [videoData, setVideoData] = useState({
@@ -36,46 +37,90 @@ const MyContent = () => {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    try {
-      const formData = new FormData();
-      formData.append("title", videoData.title);
-      formData.append("description", videoData.description);
-      formData.append("videoFile", videoData.videoFile);
-      formData.append("thumbnail", videoData.thumbnail);
 
+    // 1. Validate inputs first
+    if (!videoData.title.trim()) {
+      handleError("Please enter a video title");
+      return;
+    }
+
+    if (!videoData.videoFile) {
+      handleError("Please select a video file");
+      return;
+    }
+
+    if (!videoData.thumbnail) {
+      handleError("Please select a thumbnail");
+      return;
+    }
+
+    // 2. Create ONE FormData instance
+    const formData = new FormData();
+    formData.append("title", videoData.title);
+    formData.append("description", videoData.description || ""); // Optional field
+    formData.append("videoFile", videoData.videoFile);
+    formData.append("thumbnail", videoData.thumbnail);
+
+    // 3. Debug before sending
+    console.log("FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    try {
+      // 4. Dispatch the upload
       const result = await dispatch(uploadVideo(formData));
-      if (result) {
-        handleSuccess("video uploaded successfully!");
+
+      // 5. Handle result
+      if (result.error) {
+        handleError(result.error.message || "Upload failed");
+      } else {
+        handleSuccess("Video uploaded successfully!");
+        setShowModal(false);
+        setVideoData({
+          title: "",
+          description: "",
+          videoFile: null,
+          thumbnail: null,
+        });
+        dispatch(fetchUserVideos(user._id));
       }
-      setShowModal(false);
-      setVideoData({
-        title: "",
-        description: "",
-        videoFile: null,
-        thumbnail: null,
-      });
-      dispatch(fetchUserVideos(user._id));
     } catch (error) {
-      handleError("Failed upload");
-      console.error("Failed to upload video:", error);
+      handleError(error.message || "Failed to upload video");
+      console.error("Upload error:", error);
     }
   };
 
   return (
-    <div className="w-full p-4">
+    <div className="w-full p-4 pb-16">
       <h1 className="text-lg font-bold mb-4">My Videos</h1>
 
-      {/* Upload Video Button */}
       <button
-        onClick={() => setShowModal(true)}
-        className="bg-blue-500 text-white px-4 py-2 mb-5 rounded"
+        onClick={() => {
+          if (!isAuthenticated) {
+            handleSuccess("Please login");
+            return;
+          }
+          setShowModal(true);
+        }}
+        className={`
+        relative px-5 py-2.5 mb-5 rounded-full font-medium bg-gradient-to-r from-[#EC7FA9] to-[#9161df]
+        hover:from-[#cc5f8e] hover:to-[#7547ff] text-black 
+        transition-all duration-300 ease-out transform hover:-translate-y-0.5
+        group overflow-hidden
+      `}
       >
-        Upload Video
+        <span className="relative z-10 flex items-center justify-center gap-2">
+          <FiUpload className="text-lg" /> {/* Using Feather icon for upload */}
+          Upload Video
+        </span>
       </button>
 
       {/* Video List */}
       {isLoading ? (
-        <p>Loading videos...</p>
+        <div className="flex justify-center items-center min-h-screen dark:bg-black bg-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900 dark:border-gray-100"></div>
+        </div>
       ) : userVideos?.length === 0 ? (
         <NoVideo />
       ) : (
@@ -141,7 +186,7 @@ const MyContent = () => {
         </div>
       )} */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
+        <div className="z-50 fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
           <div className="bg-white dark:bg-gray-900 text-black dark:text-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h2 className="text-2xl font-semibold text-center mb-4">
               Upload Video
