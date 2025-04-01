@@ -12,6 +12,7 @@ import {
 } from "../redux/slices/Videoslice.js";
 import Swal from "sweetalert2";
 import PlaylistModal from "./PlaylistModal.jsx";
+import { addWatchLater } from "../redux/slices/watchLaterSlice.js";
 
 const VideoCard = ({ video }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -184,6 +185,24 @@ const VideoCard = ({ video }) => {
     }
   };
 
+  const handleAddToWatchlater = async () => {
+    if(!isAuthenticated){
+      handleSuccess("Please login");
+      return
+    }
+    try {
+      // console.log(video._id);
+      const response = await dispatch(addWatchLater(video._id)).unwrap();
+      
+      if (response) {
+        handleSuccess("added to watchlater")
+      }
+
+    } catch (error) {
+      console.error("Failed to added to watchlater:", error);
+    }
+  }
+
   return (
     <div
       className="rounded-lg overflow-visible transition-transform duration-300 cursor-pointer"
@@ -270,7 +289,9 @@ const VideoCard = ({ video }) => {
               ref={optionsRef}
               className="absolute text-sm z-50 top-2 right-5 dark:bg-gray-800 dark:text-white bg-gray-400 text-black rounded-lg shadow-md p-2"
             >
-              <button className="block w-full text-left px-2 py-2 hover:bg-gray-700">
+              <button 
+              onClick={handleAddToWatchlater}
+              className="block w-full text-left px-2 py-2 hover:bg-gray-700">
                 Watch Later
               </button>
               <button 

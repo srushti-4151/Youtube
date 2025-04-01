@@ -30,7 +30,7 @@ const MobileBottomBar = () => {
       </NavLink>
 
       <NavLink
-        to="/collection"
+        to="/playlists"
         className={({ isActive }) =>
           `flex flex-col items-center ${
             isActive ? "dark:text-white text-black" : "text-gray-dark:text-gray-400 text-gray-600"
@@ -38,7 +38,7 @@ const MobileBottomBar = () => {
         }
       >
         <FaFolder size={20} />
-        <span className="text-xs">Collection</span>
+        <span className="text-xs">playlists</span>
       </NavLink>
 
       <NavLink

@@ -11,6 +11,8 @@ import {
 import { BsCollectionPlay } from "react-icons/bs";
 import { FaRegUserCircle, FaRegQuestionCircle } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
+import { MdOutlineWatchLater } from "react-icons/md";
+
 
 const Sidebar = () => {
   const isOpen = useSelector((state) => state.sidebar.isSidebarOpen);
@@ -68,9 +70,9 @@ const Sidebar = () => {
             isOpen={isOpen}
           />
           <SidebarItem
-            to="/subscribers"
-            icon={<FaRegUserCircle />}
-            text="Subscribers"
+            to="/watchlater"
+            icon={<MdOutlineWatchLater />}
+            text="WatchLater"
             isOpen={isOpen}
           />
         </ul>

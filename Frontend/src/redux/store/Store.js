@@ -8,6 +8,7 @@ import commentreducer from "../slices/CommentSlice.js"
 import likeReducer from "../slices/Likeslice.js"
 import playlistsReducer from "../slices/PlaylistSlice.js"
 import viewsReducer from "../slices/ViewSlice.js"
+import watchLaterReducer from "../slices/watchLaterSlice.js";
 
 export const store = configureStore({
     reducer: {
@@ -20,5 +21,6 @@ export const store = configureStore({
         like: likeReducer,
         playlists: playlistsReducer,
         views: viewsReducer,
+        watchLater : watchLaterReducer,
     }
 })

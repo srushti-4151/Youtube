@@ -10,6 +10,7 @@ import { timeAgo } from "../../utils/timeUtils.js";
 import { FiMoreVertical } from "react-icons/fi";
 import { handleSuccess } from "../../utils/toast.js";
 import { useForm } from "react-hook-form";
+import Swal from "sweetalert2";
 
 const PlaylistSection = () => {
   const dispatch = useDispatch();
@@ -50,17 +51,34 @@ const PlaylistSection = () => {
   };
 
   const handleDelete = (playlistId, e) => {
-    e.stopPropagation();
-    console.log("Delete function triggered for:", playlistId);
-    dispatch(removePlaylist(playlistId))
-      .then(() => {
-        handleSuccess("Playlist deleted");
-        setShowDropdown(false);
-      })
-      .catch((error) => {
-        console.error("Error deleting playlist:", error);
-      });
+    e.stopPropagation();  // Prevent the event from bubbling up
+  
+    // Display confirmation dialog before proceeding with the delete action
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to delete this playlist?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await dispatch(removePlaylist(playlistId)).unwrap();  // Unwrap to handle rejected actions properly
+  
+          if (response) {
+            handleSuccess("Playlist deleted");
+            setShowDropdown(false);  // Hide dropdown after successful deletion
+          }
+        } catch (error) {
+          console.error("Error deleting playlist:", error);
+          Swal.fire("Error!", "Failed to delete the playlist.", "error");  // Show error if deletion fails
+        }
+      }
+    });
   };
+  
 
   const [editingPlaylist, setEditingPlaylist] = useState(null);
 

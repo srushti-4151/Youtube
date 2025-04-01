@@ -120,6 +120,7 @@ export const removeVideo = createAsyncThunk(
 const initialState = {
   userPlaylists: [],
   selectedPlaylist: null,
+  PisLoading:false,
   isLoading: false,
   isCreating: false,
   isUpdating: false,
@@ -183,15 +184,15 @@ const playlistSlice = createSlice({
 
       // Get a playlist by ID
       .addCase(fetchPlaylistById.pending, (state) => {
-        state.isLoading = true;
+        state.PisLoading = true;
         state.error = null;
       })
       .addCase(fetchPlaylistById.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.PisLoading = false;
         state.selectedPlaylist = action.payload.data;
       })
       .addCase(fetchPlaylistById.rejected, (state, action) => {
-        state.isLoading = false;
+        state.PisLoading = false;
         state.error = action.payload;
       })
 

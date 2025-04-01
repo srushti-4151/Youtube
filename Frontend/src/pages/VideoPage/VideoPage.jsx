@@ -35,7 +35,7 @@ import {
 } from "../../redux/slices/Likeslice.js";
 import RecommendedVideos from "../../components/RecommendedVideos.jsx";
 import { countView } from "../../api/viewsApi.js";
-import { addHistory } from "../../redux/slices/ViewSlice.js";
+// import { addHistory } from "../../redux/slices/ViewSlice.js";
 
 const VideoPage = () => {
   const { id } = useParams(); // Get video ID from URL
@@ -67,19 +67,12 @@ const VideoPage = () => {
     const timeout = setTimeout(() => {
       console.log("Adding to watch history:", id); 
       countView(id); // Call API after delay
-      dispatch(addHistory(id));
+      // dispatch(addHistory(id));
     }, 5000); // Wait 5 seconds before counting view
 
     return () => clearTimeout(timeout); // Cleanup on unmount
 
-  }, [id]);
-
-
-  useEffect(() => {
-    console.log("Component Mounted");
-    return () => console.log("Component Unmounted");
-  }, []);
-  
+  }, [id]);  
 
   const { comments } = useSelector((state) => state.comments);
   const { selectedVideo, isLoading, error } = useSelector(

@@ -7,23 +7,11 @@ const videoViewSchema = new Schema(
       ref: "Video",
       required: true,
     },
-
-    user: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User", 
-      default: null 
-    }, // Null if guest
-
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, // Null if guest
     guestId: { type: String, default: null }, // Hashed for unauthenticated users
-    
-    viewedAt: { type: Date, default: Date.now },
-
-    lastWatchedAt: { type: Date, default: Date.now }, // Update when user re-watches
+    watchHistory: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
-
-// Create an index for faster queries (get watch history sorted by latest)
-videoViewSchema.index({ user: 1, lastWatchedAt: -1 });
 
 export const VideoView = mongoose.model("VideoView", videoViewSchema);

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { addToWatchHistory, getWatchHistory } from "../../api/viewsApi.js";
+import { clearHistory, deleteHistoryItem, getWatchHistory } from "../../api/viewsApi.js";
 
 // Async action to fetch watch history
 export const fetchWatchHistory = createAsyncThunk(
@@ -7,23 +7,33 @@ export const fetchWatchHistory = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const data = await getWatchHistory();
-      return data.history;
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
 
-// Add video to watch history
-export const addHistory = createAsyncThunk(
-  "watchHistory/addHistory",
+// Delete a single video from watch history
+export const removeFromHistory = createAsyncThunk(
+  "watchHistory/removeFromHistory",
   async (videoId, { rejectWithValue }) => {
     try {
-      console.log("Sice Add History videoId.......:", videoId);
-      const data = await addToWatchHistory(videoId);
-      return data;
+      return await deleteHistoryItem(videoId);
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error);
+    }
+  }
+);
+
+// Clear entire watch history
+export const clearWatchHistory = createAsyncThunk(
+  "watchHistory/clearWatchHistory",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await clearHistory();
+    } catch (error) {
+      return rejectWithValue(error);
     }
   }
 );
@@ -52,18 +62,13 @@ const watchHistorySlice = createSlice({
         state.error = action.payload;
       })
 
-      // Add to Watch History Cases
-      .addCase(addHistory.pending, (state) => {
-        console.log("addHistory API called"); 
-        state.addLoading = true;
+      // Remove a single item
+      .addCase(removeFromHistory.fulfilled, (state, action) => {
+        state.history = state.history.filter(item => item.video._id !== action.payload);
       })
-      .addCase(addHistory.fulfilled, (state, action) => {
-        state.addLoading = false;
-        console.log("entry add to history:", action.payload);
-      })
-      .addCase(addHistory.rejected, (state, action) => {
-        state.addLoading = false;
-        state.error = action.payload;
+      // Clear history
+      .addCase(clearWatchHistory.fulfilled, (state) => {
+        state.history = [];
       });
   },
 });

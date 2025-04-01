@@ -5,25 +5,12 @@ const VIEWS_API_URL = "http://localhost:8000/api/v1/views";
 export const countView = async (videoId) => {
   try {
     const response = await api.post(`${VIEWS_API_URL}/${videoId}`);
-    // console.log("res of views cot :", response)
+    console.log("res of views cot :", response)
     return response
   } catch (error) {
     console.error("Error counting view:", error.response?.data || error);
   }
 };
-
-// Add video to watch history
-export const addToWatchHistory = async (videoId) => {
-  try {
-    console.log("Add History videoId.......:", videoId)
-    const response = await api.post(`${VIEWS_API_URL}/history/${videoId}`);
-    console.log("History response.......:", response)
-    return response.data;
-  } catch (error) {
-    console.error("Error adding to watch history:", error.response?.data || error);
-  }
-};
-
 // Get watch history (Paginated)
 export const getWatchHistory = async () => {
   try {
@@ -34,3 +21,23 @@ export const getWatchHistory = async () => {
     console.error("Error fetching watch history:", error.response?.data || error);
   }
 };
+
+
+export const deleteHistoryItem = async (videoId) => {
+  try {
+    const response = await api.delete(`${VIEWS_API_URL}/history/${videoId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting watch history item:", error.response?.data || error);
+  }
+};
+
+export const clearHistory = async () => {
+  try {
+    const response = await api.delete(`${VIEWS_API_URL}/history/clear`);
+    return response.data;
+  } catch (error) {
+    console.error("Error clearing watch history:", error.response?.data || error);
+  }
+};
+

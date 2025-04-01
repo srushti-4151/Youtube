@@ -23,7 +23,7 @@ const videoSchema = new Schema(
             type: Number, 
             required: true
         },
-        views: { // cloudninay returns the file information after we upload file (url,time etc...) 
+        views: {
             type: Number,
             default: 0
         },

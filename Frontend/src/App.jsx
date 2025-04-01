@@ -7,7 +7,7 @@ import LikedVideos from "./pages/LikedVideos/LikedVideos";
 import History from "./pages/History/History";
 import MyContent from "./pages/MyContent/MyContent";
 import Collection from "./pages/Collection/Collection";
-import Subscribers from "./pages/Subscribers/Subscribers";
+import WatchLater from "./pages/WatchLater/WatchLater";
 import Home from "./pages/Home/Home";
 import { useDispatch, useSelector } from "react-redux";
 import VideoPage from "./pages/VideoPage/VideoPage";
@@ -69,7 +69,7 @@ function App() {
               <Route path="/liked-videos" element={<LikedVideos />} />
               <Route path="/history" element={<History />} />
               <Route path="/my-content" element={<MyContent />} />
-              <Route path="/subscribers" element={<Subscribers />} />
+              <Route path="/watchlater" element={<WatchLater />} />
               <Route path="playlists" element={<PlaylistSection />} />
               <Route path="/playlist/:playlistId" element={<PlayListPage />} />
 
