@@ -7,6 +7,7 @@ import {
   togglePublishStatus,
   updateVideo,
   getAllVideosById,
+  getAllVideosOfUser,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -15,6 +16,7 @@ const router = Router();
 
 // Routes that do not require authentication
 router.route("/all").get(getAllVideos);
+router.route("/uservideos").get(getAllVideosOfUser);
 router.route("/:videoId").get(getVideoById);
 
 // Routes that require authentication

@@ -151,6 +151,130 @@ const getAllVideosById = asyncHandler(async (req, res) => {
   }
 });
 
+const getAllVideosOfUser = asyncHandler(async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "desc",
+    userId,
+  } = req.query;
+  //   console.log("req.query.userId",req.query.userId)
+  console.log("Received userId in of user:", req.query.userId);
+
+  // Validate pagination params
+  if (page < 1 || limit < 1) {
+    throw new ApiError(400, "Invalid pagination parameters");
+  }
+
+  // Build query object
+  const queryObject = {};
+
+  if (userId) {
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(400, "Invalid user ID");
+    }
+    queryObject.owner = new mongoose.Types.ObjectId(userId); //Filtering by userId
+  }
+
+  // Only add search criteria if query is provided
+  if (query) {
+    queryObject.$or = [
+      //$regex: query → This applies a pattern match (like LIKE in SQL)
+      { title: { $regex: query, $options: "i" } }, //$options: "i" → This makes the search case-insensitive
+      { description: { $regex: query, $options: "i" } },
+    ];
+  }
+
+  // Validate and build sort object
+  const allowedSortFields = [
+    "title",
+    "description",
+    "createdAt",
+    "updatedAt",
+    "views",
+  ];
+  if (!allowedSortFields.includes(sortBy)) {
+    throw new ApiError(400, "Invalid sort field");
+  }
+
+  if (!["asc", "desc"].includes(sortType)) {
+    throw new ApiError(400, "Sort type must be 'asc' or 'desc'");
+  }
+
+  const sortObject = {
+    [sortBy]: sortType === "desc" ? -1 : 1,
+  };
+
+  try {
+    //Divides total videos by limit to calculate the total pages.
+    const totalVideos = await Video.countDocuments(queryObject);
+
+    // Get paginated videos with owner details
+    const videos = await Video.aggregate([
+      { $match: queryObject },
+      // Join with views collection to count total views per video
+      {
+        $lookup: {
+          from: "videoviews",
+          localField: "_id",
+          foreignField: "video",
+          as: "views",
+        },
+      },
+      {
+        $addFields: {
+          views: { $size: "$views" }, // Count total views
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+          pipeline: [
+            {
+              $project: {
+                username: 1,
+                fullName: 1,
+                avatar: 1,
+              },
+            },
+          ],
+        },
+      },
+      { $unwind: "$owner" },
+      { $sort: sortObject },
+      { $skip: (Number(page) - 1) * Number(limit) },
+      { $limit: Number(limit) },
+    ]);
+
+    const totalPages = Math.ceil(totalVideos / Number(limit));
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          videos,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            totalPages,
+            totalVideos,
+            hasNextPage: Number(page) < totalPages,
+            hasPrevPage: Number(page) > 1,
+          },
+        },
+        "Videos fetched successfully"
+      )
+    );
+  } catch (error) {
+    throw new ApiError(500, "Failed to fetch videos");
+  }
+});
+
 // fetches all videos  from the database with pagination, sorting, and owner details.
 const getAllVideos = asyncHandler(async (req, res) => {
   //🚀Steps:
@@ -251,7 +375,7 @@ const getVideoById = asyncHandler(async (req, res) => {
   console.log("Video ID:", videoId);
 
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(400, "Video id is required!");
+    throw new ApiError(400, "Video id is required!!!!");
   }
   try {
     //The video document by its _id
@@ -686,4 +810,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  getAllVideosOfUser
 };

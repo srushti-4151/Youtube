@@ -12,7 +12,7 @@ export const checkIsSubscribed = createAsyncThunk(
   async (username, thunkAPI) => {
     try {
       const response = await checkSubscriptionStatus(username);
-      return response;
+      return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.message || "Failed to fetch subscribe status"
@@ -125,8 +125,8 @@ const subscriptionSlice = createSlice({
       })
       .addCase(toggleUserSubscription.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isSubscribed = !state.isSubscribed; 
-      })
+        state.isSubscribed = action.payload?.isSubscribed ?? !state.isSubscribed; 
+      })      
       .addCase(toggleUserSubscription.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;

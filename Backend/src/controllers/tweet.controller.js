@@ -4,19 +4,37 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
+import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 
 const createTweet = asyncHandler(async (req, res) => {
   //TODO: create tweet
-  const { content } = req.body;
+  const { content, post } = req.body;
+  const postpath = req.file?.path
+  const owner = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(owner)) {
+    throw new ApiError(400, "Invalid User ID");
+  }
+  const postImage = await uploadOnCloudinary(postpath);
+
+  if (!postImage.url) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
 
   if (!content) {
     throw new ApiError(400, "Content required!");
   }
 
+  if (!mongoose.Types.ObjectId.isValid(owner)) {
+    throw new ApiError(400, "Invalid User Id");
+  }
+
   const tweet = await Tweet.create({
     content,
-    owner: req.user._id,
+    owner,
+    post: postImage.url,
   });
+
   if (!tweet) {
     throw new ApiError(500, "Tweet could not be created");
   }
@@ -29,10 +47,8 @@ const createTweet = asyncHandler(async (req, res) => {
 const getUserTweets = asyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      throw new ApiError(400, "Invalid User ID");
-    }
+    
+    console.log("user iid for tweet: ", userId);
 
     const tweets = await Tweet.aggregate([
       { $match: { owner: new mongoose.Types.ObjectId(userId) } },
@@ -46,23 +62,71 @@ const getUserTweets = asyncHandler(async (req, res) => {
           as: "likes",
         },
       },
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+          pipeline: [
+            {
+              $project: {
+                username: 1,
+                fullName: 1,
+                avatar: 1,
+              },
+            },
+          ],
+        },
+      },
 
       // Add computed fields for likesCount and isLiked by the current user
       {
         $addFields: {
-          likesCount: { $size: "$likes" }, // Count the number of likes
+          likesCount: { $size: "$likes" },
+          owner: { $arrayElemAt: ["$owner", 0] },
+          // isLiked: {
+          //   $in: [new mongoose.Types.ObjectId(req.user?._id), "$likes.likedBy"],
+          //   // Check if the current user is in the likedBy array
+          // },
           isLiked: {
-            $in: [new mongoose.Types.ObjectId(req.user?._id), "$likes.likedBy"],
-            // Check if the current user is in the likedBy array
+            //Boolean indicating whether the current user liked this comment.
+            $cond: {
+              if: {
+                $gt: [
+                  // Check if the filtered likes count is greater than 0
+                  {
+                    $size: {
+                      //$size is used because the likes field is an array (not separate documents).
+                      // Counts the number of likes where likedBy matches the current user.
+                      $filter: {
+                        // keeps only likes where likedBy equals the logged-in user’s _id.
+                        input: "$likes",
+                        as: "like",
+                        cond: {
+                          //Keep only the likes where like.likedBy === req.user?._id.
+                          $eq: [
+                            "$$like.likedBy",
+                            new mongoose.Types.ObjectId(req.user?._id),
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  0,
+                ],
+              },
+              then: true,
+              else: false,
+            },
           },
         },
       },
-
-      // Select only required fields for the response
       {
         $project: {
           _id: 1,
           content: 1,
+          post: 1,
           owner: 1,
           createdAt: 1,
           likesCount: 1,

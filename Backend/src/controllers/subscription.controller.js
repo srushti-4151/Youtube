@@ -8,13 +8,10 @@ import { Subscription } from "../models/subscription.models.js";
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
   // TODO: toggle subscription
-  if (!isValidObjectId(channelId)) {
-    throw new ApiError(400, "Invalid channel ID");
+  if (!channelId || !isValidObjectId(channelId)) {
+    throw new ApiError(400, "Invalid or missing channel ID");
   }
-
-  if (!channelId) {
-    throw new ApiError(400, "channel ID is required");
-  }
+  
 
   try {
     const existingSubscription = await Subscription.findOne({

@@ -83,6 +83,20 @@ export const getAllVideosById = async (userId) => {
   }
 };
 
+export const getAllVideosOfUser = async (userId) => {
+  try {
+    const response = await axios.get(`${VIDEO_API_URL}/uservideos?userId=${userId}`); 
+    // console.log("response of vid", response);
+    // console.log("response.data of vid", response.data);
+    return response.data; // ✅ Return only `data`
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "An error occurred",
+    };
+  }
+};
+
 // export const updateVideoDetails = async (videoId, updateData) => {
 //   try {
 //     console.log("dataaaaaaaaaa", updateData)

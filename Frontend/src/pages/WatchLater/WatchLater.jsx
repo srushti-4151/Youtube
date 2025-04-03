@@ -13,9 +13,12 @@ const WatchLater = () => {
   const { watchLater, fetchLoading, removeLoading, error } = useSelector(
     (state) => state.watchLater
   );
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
+    if(isAuthenticated){
     dispatch(fetchWatchLater());
+    }
   }, [dispatch]);
 
   const handleRemove = (videoId) => {
@@ -78,7 +81,7 @@ const WatchLater = () => {
         </h1>
       </div>
 
-      {watchLater.length === 0 ? (
+      {watchLater.length === 0 || !isAuthenticated ? (
         <div className="text-center py-12">
           <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
             <svg

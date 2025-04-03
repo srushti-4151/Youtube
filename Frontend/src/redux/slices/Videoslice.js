@@ -3,6 +3,7 @@ import {
   deleteVideoById,
   getAllVideos,
   getAllVideosById,
+  getAllVideosOfUser,
   getVideoById,
   updateVideoDetails,
   uploadNewVideo,
@@ -64,6 +65,20 @@ export const fetchUserVideos = createAsyncThunk(
   }
 );
 
+export const fetchAllVideosOfUser = createAsyncThunk(
+  "videos/fetchAllVideosOfUser",
+  async (userId, thunkAPI) => {
+    // Accept userId
+    try {
+      const response = await getAllVideosOfUser(userId);
+      console.log("response", response);
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue("Failed to fetch user's videos");
+    }
+  }
+);
+
 // export const updateVideo = createAsyncThunk(
 //   "videos/update",
 //   async ({ videoId, updatedata }, { rejectWithValue }) => {
@@ -105,12 +120,16 @@ export const deleteVideo = createAsyncThunk(
 const initialState = {
   videos: [],
   userVideos: [], // Now an array
+  userAllVideos: [],
   pagination: null, // Stores pagination details
   selectedVideo: null,
+  AllLoading: false,
   isLoading: false,
   isUpdating: false,
   isDeleting: false,
   isUploading: false,
+  isvideosLoading: false,
+  isuserVidLoading: false,
   error: null,
 };
 
@@ -123,15 +142,15 @@ const videoSlice = createSlice({
     builder
       // Fetch all videos
       .addCase(fetchAllVideos.pending, (state) => {
-        state.isLoading = true;
+        state.AllLoading = true;
       })
       .addCase(fetchAllVideos.fulfilled, (state, action) => {
         state.videos = action.payload.data;
-        state.isLoading = false;
+        state.AllLoading = false;
       })
       .addCase(fetchAllVideos.rejected, (state, action) => {
         state.error = action.payload;
-        state.isLoading = false;
+        state.AllLoading = false;
       })
 
       // Fetch video By id
@@ -149,17 +168,31 @@ const videoSlice = createSlice({
 
       // Fetch user videos
       .addCase(fetchUserVideos.pending, (state) => {
-        state.isLoading = true;
+        state.isvideosLoading = true;
       })
       .addCase(fetchUserVideos.fulfilled, (state, action) => {
         // console.log("Fetched User Videos Data:", action.payload);
         state.userVideos = action.payload.data.videos || [];
         state.pagination = action.payload.data.pagination || null;
-        state.isLoading = false;
+        state.isvideosLoading = false;
       })
       .addCase(fetchUserVideos.rejected, (state, action) => {
         state.error = action.payload;
-        state.isLoading = false;
+        state.isvideosLoading = false;
+      })
+
+      // Fetch user all videos
+      .addCase(fetchAllVideosOfUser.pending, (state) => {
+        state.isuserVidLoading = true;
+      })
+      .addCase(fetchAllVideosOfUser.fulfilled, (state, action) => {
+        // console.log("Fetched User Videos Data:", action.payload);
+        state.userAllVideos = action.payload.videos || [];
+        state.isuserVidLoading = false;
+      })
+      .addCase(fetchAllVideosOfUser.rejected, (state, action) => {
+        state.error = action.payload;
+        state.isuserVidLoading = false;
       })
 
       // Upload video

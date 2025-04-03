@@ -17,6 +17,12 @@ const PlayListPage = () => {
   );
   console.log("selectedPlaylist", selectedPlaylist);
 
+  // Check ownership in two ways:
+  // 1. If `isProfileOwner` was passed via navigation state
+  // 2. If the logged-in user ID matches the playlist owner's ID
+  const { user } = useSelector((state) => state.auth);
+  const isPlaylistOwner = user?._id === selectedPlaylist?.owner;
+
   useEffect(() => {
     dispatch(fetchPlaylistById(playlistId));
   }, [dispatch, playlistId]);
@@ -56,7 +62,7 @@ const PlayListPage = () => {
     });
   };
 
-  if (PisLoading)
+  if (!selectedPlaylist)
     return (
       <div className="flex justify-center py-6">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -151,13 +157,16 @@ const PlayListPage = () => {
                         {video.views || 0} views • {timeAgo(video.createdAt)}
                       </p>
                     </Link>
-                    <button
-                      onClick={() => handleRemove(video._id)}
-                      className="text-red-500 hover:text-red-700 ml-3 transition-colors"
-                      title="Remove from playlist"
-                    >
-                      <FaTrash className="w-5 h-5" />
-                    </button>
+
+                    {isPlaylistOwner && (
+                      <button
+                        onClick={() => handleRemove(video._id)}
+                        className="text-red-500 hover:text-red-700 ml-3 transition-colors"
+                        title="Remove from playlist"
+                      >
+                        <FaTrash className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

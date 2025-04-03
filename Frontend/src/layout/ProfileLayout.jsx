@@ -13,7 +13,13 @@ import ImageCropper from "../utils/ImageCropper";
 import { useForm } from "react-hook-form";
 import { handleError, handleSuccess } from "../utils/toast";
 import { FiEdit } from "react-icons/fi";
-import defaultcover from "../assets/images/DefaultCoverimg.jpg"
+import defaultcover from "../assets/images/DefaultCoverimg.jpg";
+import {
+  checkIsSubscribed,
+  toggleUserSubscription,
+} from "../redux/slices/Subscriptionslice";
+import { LuBellRing } from "react-icons/lu";
+import Loader from "../components/Loader";
 
 function ProfileLayout() {
   const { username } = useParams();
@@ -22,10 +28,20 @@ function ProfileLayout() {
   const { user, userChannelProfile, isLoading, isAuthenticated } = useSelector(
     (state) => state.auth
   );
+
+  const { isSubscribed } = useSelector((state) => state.subscriptions);
+
+  useEffect(() => {
+    if (isAuthenticated && userChannelProfile?.username) {
+      dispatch(checkIsSubscribed(userChannelProfile?.username));
+    }
+  }, [isAuthenticated, userChannelProfile, dispatch]);
+
   console.log("userChannelProfile", userChannelProfile);
+
   useEffect(() => {
     dispatch(fetchUserChannelProfile(username));
-  }, [username, dispatch]);
+  }, [username, isSubscribed, dispatch]);
 
   const isProfileOwner =
     user && userChannelProfile && user.username === userChannelProfile.username;
@@ -143,7 +159,9 @@ function ProfileLayout() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading...</div>;
+    return (
+      <Loader />
+    )
   }
 
   if (!userChannelProfile) {
@@ -154,11 +172,13 @@ function ProfileLayout() {
     <div className="dark:bg-black bg-white text-black min-h-screen dark:text-white px-2 pt-10 pb-4 overflow-x-hidden md:px-8">
       {/* Cover Image */}
       <div className="relative">
-          <img
-            src={coverImagePreview || userChannelProfile.coverImage || defaultcover}
-            alt="coverimage"
-            className="object-cover object-center w-full h-48 rounded-lg"
-          />
+        <img
+          src={
+            coverImagePreview || userChannelProfile.coverImage || defaultcover
+          }
+          alt="coverimage"
+          className="object-cover object-center w-full h-52 rounded-lg"
+        />
 
         {isProfileOwner && (
           <button
@@ -169,7 +189,7 @@ function ProfileLayout() {
             className="absolute bottom-4 right-4 bg-black/70 hover:bg-black/90 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm transition-all"
           >
             <FiEdit className="text-base" />
-             Edit cover
+            Edit cover
           </button>
         )}
       </div>
@@ -211,7 +231,7 @@ function ProfileLayout() {
             <p>{userChannelProfile.subscribersCount} Subscribers</p>
             <span className="hidden sm:inline">•</span>
 
-            <p>{10 || 0} Videos</p>
+            <p>{userChannelProfile.totalVideos} Videos</p>
           </div>
 
           {isAuthenticated ? (
@@ -304,17 +324,24 @@ function ProfileLayout() {
                 )}
               </div>
             ) : (
-              <button className="flex items-center justify-center w-full gap-2 px-3 py-2 mt-2 text-sm dark:text-gray-100 dark:bg-gray-700 text-gray-950 bg-gray-600 rounded-3xl sm:w-max sm:mt-0">
-                {userChannelProfile.isSubscribed ? (
-                  <span>
-                    <GoBellSlash size={20} className="inline-block" />{" "}
-                    {"Subscribed"}
-                  </span>
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    handleSuccess("Please log in to subscribe!");
+                    return;
+                  }
+                  dispatch(toggleUserSubscription(userChannelProfile?._id));
+                }}
+                className="flex items-center justify-center w-full gap-2 px-3 py-2 mt-2 text-sm dark:text-gray-100 dark:bg-gray-700 text-gray-950 bg-gray-600 rounded-3xl sm:w-max sm:mt-0"
+              >
+                {isAuthenticated && isSubscribed ? (
+                  <LuBellRing size={20} />
                 ) : (
-                  <span>
-                    <GoBell size={20} className="inline-block" /> {"Subscribe"}
-                  </span>
+                  <GoBell size={20} />
                 )}
+                <span>
+                  {isAuthenticated && isSubscribed ? "Subscribed" : "Subscribe"}
+                </span>
               </button>
             )
           ) : (
@@ -326,7 +353,7 @@ function ProfileLayout() {
       </div>
 
       <div className="flex px-3 md:px-5 mt-7 gap-5 overflow-x-auto">
-        {["Videos", "Shorts", "Live", "Playlists", "Posts"].map((tab) => (
+        {["Videos", "Playlists", "Tweets"].map((tab) => (
           <NavLink
             key={tab}
             to={tab.toLowerCase()}
@@ -347,7 +374,7 @@ function ProfileLayout() {
 
       <hr className="mx-3 md:mx-5" />
 
-      <div className="flex my-4 gap-3 px-3 md:px-5 mt-7">
+      {/* <div className="flex my-4 gap-3 px-3 md:px-5 mt-7">
         {filters.map((filter) => (
           <button
             key={filter}
@@ -362,11 +389,16 @@ function ProfileLayout() {
             {filter}
           </button>
         ))}
-      </div>
+      </div> */}
 
       {/* Page Content */}
       <div className="px-3 md:px-5">
-        <Outlet />
+        <Outlet
+          context={{
+            userId: userChannelProfile?._id,
+            isProfileOwner: isProfileOwner,
+          }}
+        />
       </div>
       {/* Image Cropper Modal */}
       {showCropper && (

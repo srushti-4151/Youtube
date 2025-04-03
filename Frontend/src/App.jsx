@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -74,6 +74,7 @@ function App() {
               <Route path="/playlist/:playlistId" element={<PlayListPage />} />
 
               <Route path="/profile/:username" element={<ProfileLayout />}>
+              <Route index element={<Navigate to="videos" replace />} />
                 <Route path="videos" element={<VideoSection />} />
                 <Route path="playlists" element={<PlaylistSection />} />
                 <Route path="tweets" element={<TweetsSection />} />

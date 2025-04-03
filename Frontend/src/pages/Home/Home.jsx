@@ -9,7 +9,7 @@ import Loader from "../../components/Loader";
 const Home = () => {
   
   const dispatch = useDispatch();
-  const { videos = [], isLoading } = useSelector((state) => state.videos.videos || {});
+  const { videos = [], AllLoading } = useSelector((state) => state.videos.videos || {});
 
   console.log("videos alll", videos)
 
@@ -19,11 +19,9 @@ const Home = () => {
 
   return (
     <div className="w-full p-4">
-      {isLoading ? (
+      {!videos || videos.length === 0  ? (
         <Loader />
-      ) : !videos || videos.length === 0 ? ( // Defensive check
-        <div className="flx justify-center items-center"> No video </div>
-      ) : (
+      ) :  (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
           {videos.map((video, index) => (
             <VideoCard key={index} video={video} />

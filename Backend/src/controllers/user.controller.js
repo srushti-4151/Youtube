@@ -513,6 +513,14 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
               as: "subscribedTo"
           }
       },
+      {
+        $lookup: {
+          from: "videos", // Assuming your videos collection is named 'videos'
+          localField: "_id",
+          foreignField: "owner", // The field in 'videos' that references 'User' (_id)
+          as: "videos",
+        },
+      },
       //Since $lookup returns an array, we use $addFields to extract the first element and store it as a normal object.
       {
           $addFields: {
@@ -521,6 +529,9 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
               },
               channelsSubscribedToCount: {
                   $size: "$subscribedTo"
+              },
+              totalVideos: { 
+                $size: "$videos" 
               },
           }
       },
@@ -532,13 +543,14 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
               channelsSubscribedToCount: 1,
               avatar: 1,
               coverImage: 1,
+              totalVideos: 1,
               email: 1
 
           }
       }
   ])
 
-  console.log("channel: ",channel);
+  // console.log("channel: ",channel);
 
   if (!channel?.length) {
       throw new ApiError(404, "channel does not exists")

@@ -5,7 +5,7 @@ import {
   fetchUserPlaylists,
   removePlaylist,
 } from "../../redux/slices/PlaylistSlice.js";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { timeAgo } from "../../utils/timeUtils.js";
 import { FiMoreVertical } from "react-icons/fi";
 import { handleSuccess } from "../../utils/toast.js";
@@ -13,9 +13,10 @@ import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 
 const PlaylistSection = () => {
+  const outletContext = useOutletContext();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { userPlaylists, isLoading } = useSelector((state) => state.playlists);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -36,11 +37,16 @@ const PlaylistSection = () => {
 
   console.log("userpaylist:", userPlaylists);
 
+  const { userId, isProfileOwner } = outletContext || {
+    userId: isAuthenticated ? user?._id : null,
+    isProfileOwner: false,
+  };
+
   useEffect(() => {
-    if (user?._id) {
-      dispatch(fetchUserPlaylists(user._id));
+    if (userId) {
+      dispatch(fetchUserPlaylists(userId));
     }
-  }, [dispatch, user?._id]);
+  }, [dispatch, userId]);
 
   // Memoized playlists for performance optimization
   const playlists = useMemo(() => userPlaylists || [], [userPlaylists]);
@@ -51,8 +57,8 @@ const PlaylistSection = () => {
   };
 
   const handleDelete = (playlistId, e) => {
-    e.stopPropagation();  // Prevent the event from bubbling up
-  
+    e.stopPropagation(); // Prevent the event from bubbling up
+
     // Display confirmation dialog before proceeding with the delete action
     Swal.fire({
       title: "Are you sure?",
@@ -65,20 +71,19 @@ const PlaylistSection = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await dispatch(removePlaylist(playlistId)).unwrap();  // Unwrap to handle rejected actions properly
-  
+          const response = await dispatch(removePlaylist(playlistId)).unwrap(); // Unwrap to handle rejected actions properly
+
           if (response) {
             handleSuccess("Playlist deleted");
-            setShowDropdown(false);  // Hide dropdown after successful deletion
+            setShowDropdown(false); // Hide dropdown after successful deletion
           }
         } catch (error) {
           console.error("Error deleting playlist:", error);
-          Swal.fire("Error!", "Failed to delete the playlist.", "error");  // Show error if deletion fails
+          Swal.fire("Error!", "Failed to delete the playlist.", "error"); // Show error if deletion fails
         }
       }
     });
   };
-  
 
   const [editingPlaylist, setEditingPlaylist] = useState(null);
 
@@ -106,7 +111,7 @@ const PlaylistSection = () => {
         })
       ).unwrap();
       onClose();
-      handleSuccess("Playlist edited")
+      handleSuccess("Playlist edited");
       setShowDropdown(false);
       dispatch(fetchUserPlaylists(user._id)); // Refresh playlists
     } catch (error) {
@@ -118,12 +123,30 @@ const PlaylistSection = () => {
     setEditingPlaylist(null);
     reset();
   };
-
+  if (!isAuthenticated && !outletContext) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+          <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
+            Please sign in to make playlists
+          </h2>
+          <Link
+            to="/login"
+            className="mt-4 px-6 py-2 bg-[#1976D2] text-white rounded-3xl hover:bg-[#1565C0] transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
-        Your Playlists
-      </h2>
+      {!isProfileOwner && (
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
+          Your Playlists
+        </h2>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-6">
@@ -162,44 +185,51 @@ const PlaylistSection = () => {
                       </div>
                     </div>
                     <div className="relative" ref={dropdownRef}>
-                      <button
-                        className="top-2 right-2 text-white hover:bg-white/20 p-1 rounded-full"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevents closing dropdown when clicking inside
-                          setShowDropdown(
-                            showDropdown === playlist._id ? null : playlist._id
-                          );
-                        }}
-                      >
-                        <FiMoreVertical size={18} />
-                      </button>
-                      {/* Dropdown menu */}
-                      {showDropdown === playlist._id && (
-                        <div
-                          className="z-30 absolute top-10 right-2 bg-gray-800 rounded-md shadow-lg w-32"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingPlaylist(playlist)
-                            }}
-                          >
-                            Edit
-                          </button>
-                          {console.log("Delete button is rendered")}
-                          <button
-                            className="w-full z-40 text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(playlist._id, e);
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                      {isAuthenticated &&
+                        (isProfileOwner || playlist.owner === user?._id) && (
+                          <>
+                            <button
+                              className="top-2 right-2 text-white hover:bg-white/20 p-1 rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevents closing dropdown when clicking inside
+                                setShowDropdown(
+                                  showDropdown === playlist._id
+                                    ? null
+                                    : playlist._id
+                                );
+                              }}
+                            >
+                              <FiMoreVertical size={18} />
+                            </button>
+                            {/* Dropdown menu */}
+                            {showDropdown === playlist._id && (
+                              <div
+                                className="z-30 absolute top-10 right-2 bg-gray-800 rounded-md shadow-lg w-32"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingPlaylist(playlist);
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                                {console.log("Delete button is rendered")}
+                                <button
+                                  className="w-full z-40 text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(playlist._id, e);
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -235,19 +265,44 @@ const PlaylistSection = () => {
               </g>
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
-            No Playlists Found
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
-            Your playlists will appear here once you create them. Start
-            organizing your favorite videos!
-          </p>
-          <Link
-            to={"/"}
-            className="mt-4 px-6 py-2 bg-[#1976D2] text-white rounded-3xl hover:bg-[#1565C0] transition-colors"
-          >
-            Create Playlist
-          </Link>
+          {isAuthenticated && isProfileOwner ? (
+            // Case: Profile owner, no playlists
+            <>
+              <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
+                No Playlists Found
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
+                Your playlists will appear here once you create them. Start
+                organizing your favorite videos!
+              </p>
+              <Link
+                to={"/"}
+                className="mt-4 px-6 py-2 bg-[#1976D2] text-white rounded-3xl hover:bg-[#1565C0] transition-colors"
+              >
+                Create Playlist
+              </Link>
+            </>
+          ) : isAuthenticated ? (
+            // Case: General Playlist Section (Authenticated but no playlists)
+            <>
+              <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
+                No Playlists Found
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md">
+                This user hasn't created any playlists yet.
+              </p>
+            </>
+          ) : (
+            // Case: Viewing another user's profile with no playlists
+            <>
+              <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
+                No playlists found
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md">
+                This user hasn’t created any playlists yet.
+              </p>
+            </>
+          )}
         </div>
       )}
       {editingPlaylist && (

@@ -62,25 +62,6 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     );
 });
 
-// const getPlaylistById = asyncHandler(async (req, res) => {
-//   const { playlistId } = req.params;
-//   //TODO: get playlist by id
-
-//   if (!playlistId?.trim() || !isValidObjectId(playlistId)) {
-//     throw new ApiError(400, "Invalid playlistId");
-//   }
-
-//   const playlist = await Playlist.findById(playlistId).populate("videos");
-
-//   if (!playlist) {
-//     throw new ApiError(404, "Playlist not found");
-//   }
-
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, playlist, "Playlist fetched successfully"));
-// });
-
 const getPlaylistById = asyncHandler(async (req, res) => { 
   const { playlistId } = req.params;
 
@@ -131,19 +112,96 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     }
   ]);
 
-  if (!playlist || playlist.length === 0) {
+  // Check if playlist exists
+  if (!playlist || playlist.length === 0 || !playlist[0]) {
     throw new ApiError(404, "Playlist not found");
   }
 
   // Check if the playlist has no videos left after removal
   if (playlist[0].videos.length === 0) {
-    return res.status(200).json(new ApiResponse(200, {}, "No videos left in the playlist"));
+    // Return the playlist with an empty videos array
+    return res.status(200).json(new ApiResponse(200, { ...playlist[0], videos: [] }, "No videos left in the playlist"));
   }
 
+  
   // Return the updated playlist with videos and views
   return res.status(200).json(new ApiResponse(200, playlist[0], "Playlist fetched successfully"));
 });
 
+// const getPlaylistById = asyncHandler(async (req, res) => { 
+//   const { playlistId } = req.params;
+
+//   // Validate playlistId
+//   if (!playlistId?.trim() || !isValidObjectId(playlistId)) {
+//     throw new ApiError(400, "Invalid playlistId");
+//   }
+
+//   // Fetch playlist with aggregation to populate videos and include views
+//   const playlist = await Playlist.aggregate([
+//     { 
+//       $match: { _id: new mongoose.Types.ObjectId(playlistId) } 
+//     },
+//     {
+//       $lookup: {
+//         from: "videos", // Reference to "videos" collection
+//         localField: "videos", // Field in Playlist to match with Video
+//         foreignField: "_id", // Field in Video collection to join with
+//         as: "videos" // Output field containing array of video data
+//       }
+//     },
+//     // Only unwind if there are videos in the playlist
+//     {
+//       $addFields: {
+//         videosCount: { $size: "$videos" }
+//       }
+//     },
+//     {
+//       $match: {
+//         videosCount: { $gt: 0 } // Only proceed with videos if count is greater than 0
+//       }
+//     },
+//     {
+//       $unwind: "$videos" // Ensure we have one video per document
+//     },
+//     {
+//       $lookup: {
+//         from: "videoviews", // Reference to "videoviews" collection for view counts
+//         localField: "videos._id", // Match video ID
+//         foreignField: "video", // Field in "videoviews" collection to join with
+//         as: "views" // Array to hold view counts
+//       }
+//     },
+//     {
+//       $addFields: {
+//         "videos.views": { $size: "$views" } // Count the number of views for each video
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: "$_id", // Group by playlist ID
+//         name: { $first: "$name" },
+//         description: { $first: "$description" },
+//         createdAt: { $first: "$createdAt" },
+//         updatedAt: { $first: "$updatedAt" },
+//         videos: { $push: "$videos" }, // Push the video data (with views) into an array
+//         owner: { $first: "$owner" },
+//       }
+//     }
+//   ]);
+
+//   if (!playlist || playlist.length === 0) {
+//     throw new ApiError(404, "Playlist not found");
+//   }
+
+//   // Check if the playlist has no videos left after removal
+//   if (playlist[0].videos.length === 0) {
+//     // Return the playlist with an empty videos array
+//     return res.status(200).json(new ApiResponse(200, { ...playlist[0], videos: [] }, "No videos left in the playlist"));
+//   }
+
+//   // Return the updated playlist with videos and views
+//   return res.status(200).json(new ApiResponse(200, playlist[0], "Playlist fetched successfully"));
+// });
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
