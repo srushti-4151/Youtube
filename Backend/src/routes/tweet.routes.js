@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     createTweet,
     deleteTweet,
+    getTweetById,
     getUserTweets,
     updateTweet,
 } from "../controllers/tweet.controller.js"
@@ -10,6 +11,7 @@ import { upload } from '../middlewares/multer.middleware.js';
 
 const router = Router();
 router.route("/user/:userId").get(getUserTweets);
+router.route("/tid/:tweetId").get(getTweetById);
 
 router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
 router.route("/").post(upload.single("post"),createTweet);

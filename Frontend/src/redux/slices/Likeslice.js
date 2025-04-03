@@ -2,8 +2,10 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   getCommentLikesStatus,
   getLikedVideos,
+  getTweetLikesStatus,
   getVideoLikesStatus,
   toggleCommentLike,
+  toggleTweetLike,
   toggleVideoLike,
 } from "../../api/LikeApi.js";
 
@@ -86,6 +88,35 @@ export const getCommentLikesStatusapi = createAsyncThunk(
   }
 );
 
+export const getTweetLikesStatusapi = createAsyncThunk(
+  "like/getTweetLikesStatusapi",
+  async (tweetId, { rejectWithValue }) => {
+    try {
+      const response = await getTweetLikesStatus(tweetId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Something went wrong"
+      );
+    }
+  }
+);
+
+export const toggleTweetLikeThunk = createAsyncThunk(
+  "like/toggleTweetLikeThunk",
+  async ({ tweetId, type }, { rejectWithValue }) => {
+    console.log("tweet id and type", tweetId, type);
+    try {
+      const response = await toggleTweetLike(tweetId, type);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Something went wrong"
+      );
+    }
+  }
+);
+
 const likeSlice = createSlice({
   name: "like",
   initialState: {
@@ -93,6 +124,7 @@ const likeSlice = createSlice({
     isvideosLoading: false,
     likeStatus: null,
     likeStatusComments: {},
+    likeStatusTweet: {},
     status: "idle",
     error: null,
   },
@@ -156,6 +188,34 @@ const likeSlice = createSlice({
         }
       })
       .addCase(getCommentLikesStatusapi.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
+      //Tweet
+      .addCase(getTweetLikesStatusapi.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(getTweetLikesStatusapi.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        if (action.payload?.tweetId) {
+          state.likeStatusTweet[action.payload.tweetId] = action.payload;
+          };
+      })
+      
+      .addCase(getTweetLikesStatusapi.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
+      //toggleTweetLikeThunk
+      .addCase(toggleTweetLikeThunk.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(toggleTweetLikeThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+      })
+      .addCase(toggleTweetLikeThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       });

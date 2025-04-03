@@ -25,6 +25,7 @@ import {
 import Login from "./pages/LoginSignup/Login";
 import Signup from "./pages/LoginSignup/Signup";
 import PlayListPage from "./pages/PlaylistPage/PlayListPage";
+import Tweetpage from "./pages/TweetPage/Tweetpage";
 
 function App() {
   const dispatch = useDispatch();
@@ -49,7 +50,7 @@ function App() {
             SidebarisOpen ? "lg:ml-60 md:ml-16 ml-0" : "md:ml-16 ml-0"
           }`}
         >
-        {/* <div
+          {/* <div
           className={`flex-1 overflow-y-auto transition-all duration-300 ${
             isAuthenticated
               ? SidebarisOpen
@@ -72,9 +73,10 @@ function App() {
               <Route path="/watchlater" element={<WatchLater />} />
               <Route path="playlists" element={<PlaylistSection />} />
               <Route path="/playlist/:playlistId" element={<PlayListPage />} />
+              <Route path="/tweet/:tweetId" element={<Tweetpage />} />
 
               <Route path="/profile/:username" element={<ProfileLayout />}>
-              <Route index element={<Navigate to="videos" replace />} />
+                <Route index element={<Navigate to="videos" replace />} />
                 <Route path="videos" element={<VideoSection />} />
                 <Route path="playlists" element={<PlaylistSection />} />
                 <Route path="tweets" element={<TweetsSection />} />

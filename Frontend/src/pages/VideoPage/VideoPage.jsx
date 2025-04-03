@@ -250,7 +250,7 @@ const VideoPage = () => {
 
   const { likeStatus, likeStatusComments } = useSelector((state) => state.like);
   // console.log("likeStatus.......................", likeStatus);
-  // console.log("likeStatusComments.......................", likeStatusComments);
+  console.log("likeStatusComments.......................", likeStatusComments);
 
   useEffect(() => {
     dispatch(getVideoLikesStatusapi(id));

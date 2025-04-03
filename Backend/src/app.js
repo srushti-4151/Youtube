@@ -26,6 +26,7 @@ import subscriptionRouter from "./routes/subscription.routes.js"
 import playlistRouter from "./routes/playlist.routes.js"
 import viewsRoutes from "./routes/views.routes.js"
 import watchlaterRoutes from "./routes/watchlater.routes.js"
+import tweetcommentRoutes from "./routes/tweetcomment.routes.js"
 
 // routes declaration
 app.use("/api/v1/users", userRouter)
@@ -37,6 +38,7 @@ app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/playlists", playlistRouter);
 app.use("/api/v1/views", viewsRoutes);
 app.use("/api/v1/watchlater", watchlaterRoutes);
+app.use("/api/v1/tweetcomment", tweetcommentRoutes);
 
 // // ex. = http://localhost:8000/api/v1/users/register
 import { errorHandler } from "./middlewares/errorHandler.js";

@@ -58,3 +58,29 @@ export const getCommentLikesStatus = async (commentId) => {
     throw error;
   }
 };
+
+
+export const getTweetLikesStatus = async (tweetId) => {
+  try {
+    const response = await api.get(`${Like_API_URL}/status/t/${tweetId}`);
+    console.log("tweet getTweetLikesStatus response:", response);
+    return response.data;
+  } catch (error) {
+    console.error("Error getVideoLikesStatus like/dislike:", error);
+    throw error;
+  }
+};
+
+// Toggle Like/Dislike for Comment
+export const toggleTweetLike = async (tweetId, type) => {
+  try {
+    const response = await api.post(`${Like_API_URL}/toggle/t/${tweetId}`, {
+      type,
+    });
+    console.log("toggleTweetLike res", response)
+    return response.data;
+  } catch (error) {
+    console.error("Error toggling comment like/dislike:", error);
+    throw error;
+  }
+};

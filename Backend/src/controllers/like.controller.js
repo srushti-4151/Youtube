@@ -340,10 +340,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   }
 });
 
-// Get Tweet Like Status
 const getTweetLikesStatus = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
-  const userId = req.user?._id;
+  const userId = req.user?._id || null;
 
   if (!isValidObjectId(tweetId)) {
     throw new ApiError(400, "Invalid Tweet ID");
@@ -364,7 +363,7 @@ const getTweetLikesStatus = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        isLiked: {
+        isLiked: userId ? {
           $in: [
             new mongoose.Types.ObjectId(userId),
             {
@@ -375,8 +374,8 @@ const getTweetLikesStatus = asyncHandler(async (req, res) => {
               },
             },
           ],
-        },
-        isDisliked: {
+        } : false,
+        isDisliked: userId ? {
           $in: [
             new mongoose.Types.ObjectId(userId),
             {
@@ -387,17 +386,33 @@ const getTweetLikesStatus = asyncHandler(async (req, res) => {
               },
             },
           ],
-        },
+        } : false,
       },
     },
     { $project: { userReaction: 0 } },
   ]);
 
   if (!result.length) {
-    return res.status(200).json(new ApiResponse(200, { isLiked: false, isDisliked: false, likesCount: 0, dislikesCount: 0 }, "Tweet like status fetched successfully"));
+    return res.status(200).json(
+      new ApiResponse(200, { 
+        tweetId, 
+        isLiked: false, 
+        isDisliked: false, 
+        likesCount: 0, 
+        dislikesCount: 0 
+      }, "tweet like status fetched successfully")
+    );
   }
 
-  return res.status(200).json(new ApiResponse(200, result[0], "Tweet like status fetched successfully"));
+  const responseData = {
+    tweetId,  // Add the tweetId explicitly
+    likesCount: result[0].likesCount || 0,
+    dislikesCount: result[0].dislikesCount || 0,
+    isLiked: result[0].isLiked || false,
+    isDisliked: result[0].isDisliked || false
+  };
+
+  return res.status(200).json(new ApiResponse(200, responseData, "tweet like status fetched successfully"));
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
@@ -419,7 +434,10 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Tweet not found");
   }
 
-  const existingReaction = await Like.findOne({ tweet: tweetId, likedBy: req.user?._id });
+  const existingReaction = await Like.findOne({ 
+    tweet: new mongoose.Types.ObjectId(tweetId), 
+    likedBy: req.user?._id
+   });
 
   if (existingReaction) {
     if (existingReaction.type === type) {
@@ -431,10 +449,117 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
       return res.status(200).json(new ApiResponse(200, existingReaction, `Tweet ${type}d successfully`));
     }
   } else {
-    const newReaction = await Like.create({ tweet: tweetId, likedBy: req.user?._id, type });
+    const newReaction = await Like.create({ 
+      tweet: new mongoose.Types.ObjectId(tweetId), 
+      likedBy: req.user?._id,
+      type 
+    });
     return res.status(200).json(new ApiResponse(200, newReaction, `Tweet ${type}d successfully`));
   }
 });
+
+// Get Tweet Like Status
+// const getTweetLikesStatus = asyncHandler(async (req, res) => {
+//   const { tweetId } = req.params;
+//   const userId = req.user?._id || null;
+
+//   if (!isValidObjectId(tweetId)) {
+//     throw new ApiError(400, "Invalid Tweet ID");
+//   }
+
+//   const tweet = await Tweet.findById(tweetId);
+//   if (!tweet) throw new ApiError(404, "Tweet not found");
+
+//   const result = await Like.aggregate([
+//     { $match: { tweet: new mongoose.Types.ObjectId(tweetId) } },
+//     {
+//       $group: {
+//         _id: "$tweet",
+//         likesCount: { $sum: { $cond: [{ $eq: ["$type", "like"] }, 1, 0] } },
+//         dislikesCount: { $sum: { $cond: [{ $eq: ["$type", "dislike"] }, 1, 0] } },
+//         userReaction: { $push: { likedBy: "$likedBy", type: "$type" } },
+//       },
+//     },
+//     {
+//       $addFields: {
+//         isLiked: userId ? {
+//           $in: [
+//             new mongoose.Types.ObjectId(userId),
+//             {
+//               $map: {
+//                 input: { $filter: { input: "$userReaction", as: "reaction", cond: { $eq: ["$$reaction.type", "like"] } } },
+//                 as: "filteredLike",
+//                 in: "$$filteredLike.likedBy",
+//               },
+//             },
+//           ],
+//         } : false,
+//         isDisliked: userId ? {
+//           $in: [
+//             new mongoose.Types.ObjectId(userId),
+//             {
+//               $map: {
+//                 input: { $filter: { input: "$userReaction", as: "reaction", cond: { $eq: ["$$reaction.type", "dislike"] } } },
+//                 as: "filteredDislike",
+//                 in: "$$filteredDislike.likedBy",
+//               },
+//             },
+//           ],
+//         } : false,
+//       },
+//     },
+//     { $project: { userReaction: 0 } },
+//   ]);
+
+//   if (!result.length) {
+//     return res.status(200).json(new ApiResponse(200, { isLiked: false, isDisliked: false, likesCount: 0, dislikesCount: 0 }, "Tweet like status fetched successfully"));
+//   }
+
+//   return res.status(200).json(new ApiResponse(200, result[0], "Tweet like status fetched successfully"));
+// });
+
+// const toggleTweetLike = asyncHandler(async (req, res) => {
+//   const { tweetId } = req.params;
+//   const { type } = req.body;
+
+//   // Check if tweetId exists first, then validate it (fixed comment)
+//   if (!tweetId) {
+//     throw new ApiError(400, "Tweet Id is Required");
+//   }
+
+//   if (!isValidObjectId(tweetId)) {
+//     throw new ApiError(400, "Invalid Tweet ID");
+//   }
+
+//   // Check if tweet exists in Tweet model before proceeding (fixed comment)
+//   const tweet = await Tweet.findById(tweetId);
+//   if (!tweet) {
+//     throw new ApiError(404, "Tweet not found");
+//   }
+
+//   const existingReaction = await Like.findOne({ 
+//     tweet: new mongoose.Types.ObjectId(tweetId), 
+//     likedBy: req.user?._id
+//    });
+
+//   if (existingReaction) {
+//     if (existingReaction.type === type) {
+//       await Like.findByIdAndDelete(existingReaction._id);
+//       return res.status(200).json(new ApiResponse(200, {}, `${type} removed successfully`));
+//     } else {
+//       existingReaction.type = type;
+//       await existingReaction.save();
+//       return res.status(200).json(new ApiResponse(200, existingReaction, `Tweet ${type}d successfully`));
+//     }
+//   } else {
+//     const newReaction = await Like.create({ 
+//       tweet: new mongoose.Types.ObjectId(tweetId), 
+//       likedBy: req.user?._id,
+//       type 
+//     });
+//     return res.status(200).json(new ApiResponse(200, newReaction, `Tweet ${type}d successfully`));
+//   }
+// });
 
 // const getLikedVideos = asyncHandler(async (req, res) => {
 //   //TODO: get all liked videos
@@ -581,6 +706,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 //     new ApiResponse(200, { videos: results.map((v) => v.video), pagination }, "Liked videos fetched successfully")
 //   );
 // });
+
 const getLikedVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   if (page < 1) {

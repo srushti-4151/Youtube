@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "./getCroppedImg.js"; // Utility function to crop the image
+import { handleError } from "./toast.js"
 
 const ImageCropper = ({ cropType, onCropComplete, onClose }) => {
   const [image, setImage] = useState(null); //Stores the uploaded image.
@@ -10,7 +11,8 @@ const ImageCropper = ({ cropType, onCropComplete, onClose }) => {
   const [zoom, setZoom] = useState(1); //zoom: Controls the zoom level.
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null); //Stores the selected crop area in pixels.
 
-  const aspectRatio = cropType === "avatar" ? 1 : 16 / 9;
+  // const aspectRatio = cropType === "avatar" ? 1 : 16 / 9;
+  const aspectRatio = cropType === "avatar" ? 1 : cropType === "tweet" ? 1 : 16 / 9;
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -25,7 +27,7 @@ const ImageCropper = ({ cropType, onCropComplete, onClose }) => {
     img.src = URL.createObjectURL(file); // Create a temporary URL for the file
     img.onload = () => {
       if (img.width < 1024 || img.height < 576) {
-        alert("Please upload an image of at least 1024x576 pixels.");
+        handleError("Please upload an image of at least 1024x576 pixels.");
         return;
       }
       
