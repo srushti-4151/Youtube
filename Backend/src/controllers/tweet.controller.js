@@ -6,6 +6,83 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/Cloudinary.js";
 
+const getAllTweets = asyncHandler(async (req, res) => {
+  try {
+    const tweets = await Tweet.aggregate([
+      // Join with Users collection to get owner details
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+          pipeline: [
+            {
+              $project: {
+                username: 1,
+                fullName: 1,
+                avatar: 1,
+              },
+            },
+          ],
+        },
+      },
+
+      // Join with Likes collection to get likes count
+      {
+        $lookup: {
+          from: "likes",
+          localField: "_id",
+          foreignField: "tweet",
+          as: "likes",
+        },
+      },
+
+      // Join with TweetComments collection to get comments count
+      {
+        $lookup: {
+          from: "tweetcomments",
+          localField: "_id",
+          foreignField: "tweet",
+          as: "comments",
+        },
+      },
+
+      // Add computed fields for like count, comments count, and owner details
+      {
+        $addFields: {
+          likesCount: { $size: "$likes" },
+          commentsCount: { $size: "$comments" },
+          owner: { $arrayElemAt: ["$owner", 0] },
+        },
+      },
+
+      // Project the final fields to return
+      {
+        $project: {
+          _id: 1,
+          content: 1,
+          post: 1,
+          owner: 1,
+          createdAt: 1,
+          likesCount: 1,
+          commentsCount: 1,
+        },
+      },
+    ]);
+
+    if (!tweets) {
+      throw new ApiError(500, "Tweets could not be fetched");
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, tweets, "Tweets fetched successfully"));
+  } catch (error) {
+    throw new ApiError(500, "Error fetching tweets");
+  }
+});
+
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const owner = req.user._id;
@@ -361,4 +438,4 @@ const getTweetById = asyncHandler(async (req, res) => {
 });
 
 
-export { createTweet, getUserTweets, updateTweet, deleteTweet, getTweetById };
+export { getAllTweets, createTweet, getUserTweets, updateTweet, deleteTweet, getTweetById };

@@ -335,7 +335,10 @@ const TweetsSection = () => {
 
               {/* Tweet Content */}
               <div className="p-5 cursor-pointer"
-              onClick={() => navigate(`/tweet/${tweet._id}`)} 
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/tweet/${tweet._id}`)} 
+              }
               >
                 {tweet.content && (
                   <>
@@ -345,6 +348,9 @@ const TweetsSection = () => {
                         type="text"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
                         className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                       />
                     ) : (
@@ -366,12 +372,17 @@ const TweetsSection = () => {
                   </div>
                 )}
                 {editMode && tweetToEdit === tweet._id && (
+                  <>
                   <button
-                    onClick={() => handleUpdate(tweet._id)}
-                    className="px-3 py-1 text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUpdate(tweet._id)}
+                    }
+                    className="m-2 px-3 py-1 text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-all"
                   >
                     Save
                   </button>
+                </>
                 )}
 
                 {/* Tweet Actions */}
@@ -431,7 +442,8 @@ const TweetsSection = () => {
                     {isProfileOwner && (
                       <div className="flex space-x-1">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setEditMode(true);
                             setTweetToEdit(tweet._id);
                             setContent(tweet.content);
@@ -441,7 +453,11 @@ const TweetsSection = () => {
                           <FiEdit size={20} />
                         </button>
                         <button
-                          onClick={() => handleDelete(tweet._id)}
+                          onClick={(e) => 
+                          {
+                            e.stopPropagation();
+                            handleDelete(tweet._id)}
+                          }
                           className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-gray-700 transition-colors"
                         >
                           <FiTrash2 size={20} />

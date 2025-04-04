@@ -30,7 +30,7 @@ const getAllVideosById = asyncHandler(async (req, res) => {
 
   const {
     page = 1,
-    limit = 10,
+    limit = 50,
     query,
     sortBy = "createdAt",
     sortType = "desc",
@@ -293,7 +293,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 50,
       sortBy = "createdAt",
       sortType = "desc",
     } = req.query;
@@ -507,7 +507,6 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to fetch video!");
   }
 });
-
 
 const publishAVideo = asyncHandler(async (req, res) => {
   // TODO: get video, upload to cloudinary, create video

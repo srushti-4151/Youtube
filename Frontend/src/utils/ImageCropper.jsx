@@ -26,10 +26,10 @@ const ImageCropper = ({ cropType, onCropComplete, onClose }) => {
     const img = new Image();
     img.src = URL.createObjectURL(file); // Create a temporary URL for the file
     img.onload = () => {
-      if (img.width < 1024 || img.height < 576) {
-        handleError("Please upload an image of at least 1024x576 pixels.");
-        return;
-      }
+      // if (img.width < 1024 || img.height < 576) {
+      //   handleError("Please upload an image of at least 1024x576 pixels.");
+      //   return;
+      // }
       
       // Read the file only if it meets the resolution requirement
       const reader = new FileReader();

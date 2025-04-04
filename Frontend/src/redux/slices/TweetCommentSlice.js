@@ -1,5 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { addTweetComment, getTweetComments } from "../../api/TweetComment.js";
+import {
+  addTweetComment,
+  deleteTweetComment,
+  getTweetComments,
+  updateTweetComment,
+} from "../../api/TweetComment.js";
 
 // Async Thunks
 export const fetchTweetComments = createAsyncThunk(
@@ -20,6 +25,23 @@ export const createTweetComment = createAsyncThunk(
   }
 );
 
+export const editTweetComment = createAsyncThunk(
+  "comments/editComment",
+  async ({ tweetId, updatedData }, thunkAPI) => {
+    const response = await updateTweetComment(tweetId, updatedData);
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return response.data;
+  }
+);
+
+export const removeTweetComment = createAsyncThunk(
+  "comments/removeComment",
+  async (tweetId, thunkAPI) => {
+    const response = await deleteTweetComment(tweetId);
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return tweetId;
+  }
+);
 
 // Initial State
 const initialState = {
@@ -59,6 +81,32 @@ const tweetcommentsSlice = createSlice({
       })
 
       .addCase(createTweetComment.rejected, (state, action) => {
+        state.ComisLoading = false;
+        state.error = action.payload;
+      })
+
+      // Update Comment
+      .addCase(editTweetComment.pending, (state) => {
+        state.ComisLoading = true;
+        state.error = null;
+      })
+      .addCase(editTweetComment.fulfilled, (state, action) => {
+        state.ComisLoading = false;
+      })
+      .addCase(editTweetComment.rejected, (state, action) => {
+        state.ComisLoading = false;
+        state.error = action.payload;
+      })
+
+      // Delete Comment
+      .addCase(removeTweetComment.pending, (state) => {
+        state.ComisLoading = true;
+        state.error = null;
+      })
+      .addCase(removeTweetComment.fulfilled, (state, action) => {
+        state.ComisLoading = false;
+      })
+      .addCase(removeTweetComment.rejected, (state, action) => {
         state.ComisLoading = false;
         state.error = action.payload;
       });

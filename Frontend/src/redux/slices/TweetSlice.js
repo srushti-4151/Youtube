@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { createTweet, deleteTweet, getTweetById, getUserTweets, updateTweet } from "../../api/TweetApi.js";
+import { createTweet, deleteTweet, getAllTweet, getTweetById, getUserTweets, updateTweet } from "../../api/TweetApi.js";
 
 // Add a new tweet (supports image + text)
 export const addTweet = createAsyncThunk(
@@ -29,6 +29,18 @@ export const fetchUserTweets = createAsyncThunk(
   }
 );
 
+export const fetchAllTweets = createAsyncThunk(
+  "tweets/fetchAllTweets",
+  async (_, thunkAPI) => {
+    try {
+      const response = await getAllTweet();
+      if (!response.success) return thunkAPI.rejectWithValue(response.message);
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
 export const fetchTweetById = createAsyncThunk(
   "tweets/fetchTweetById",
   async (tweetId, thunkAPI) => {
@@ -71,8 +83,10 @@ export const removeTweet = createAsyncThunk(
 
 // Initial State
 const initialState = {
+  alltweets: [],
   tweets: [],
   tweet: [],
+  alltweetsLoading: false,
   tweetsLoading: false,
   tweetLoading: false,
   error: null,
@@ -110,6 +124,20 @@ const tweetSlice = createSlice({
       })
       .addCase(fetchUserTweets.rejected, (state, action) => {
         state.tweetsLoading = false;
+        state.error = action.payload;
+      })
+
+      //all 
+      .addCase(fetchAllTweets.pending, (state) => {
+        state.alltweetsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllTweets.fulfilled, (state, action) => {
+        state.alltweetsLoading = false;
+        state.alltweets = action.payload;
+      })
+      .addCase(fetchAllTweets.rejected, (state, action) => {
+        state.alltweetsLoading = false;
         state.error = action.payload;
       })
 

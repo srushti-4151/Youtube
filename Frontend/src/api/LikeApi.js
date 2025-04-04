@@ -66,7 +66,7 @@ export const getTweetLikesStatus = async (tweetId) => {
     console.log("tweet getTweetLikesStatus response:", response);
     return response.data;
   } catch (error) {
-    console.error("Error getVideoLikesStatus like/dislike:", error);
+    console.error("Error getTweetLikesStatus like/dislike:", error);
     throw error;
   }
 };
@@ -81,6 +81,33 @@ export const toggleTweetLike = async (tweetId, type) => {
     return response.data;
   } catch (error) {
     console.error("Error toggling comment like/dislike:", error);
+    throw error;
+  }
+};
+
+
+//TWEET COMMENT GET 
+
+export const getTweetCommentLikesStatus = async (tweetComId) => {
+  try {
+    const response = await api.get(`${Like_API_URL}/status/t/c/${tweetComId}`);
+    console.log("tweetComId like status", response)
+    return response.data;
+  } catch (error) {
+    console.error("Error getting comment like/dislike status:", error);
+    throw error;
+  }
+};
+// /TWEET COMMENT TOGGLE
+export const toggleTweetCommentLike = async (tweetComId, type) => {
+  try {
+    const response = await api.post(`${Like_API_URL}/toggle/t/c/${tweetComId}`, {
+      type,
+    });
+    console.log("toggleTweetCommentLike response", response)
+    return response.data;
+  } catch (error) {
+    console.error("Error toggling tweet comment like/dislike:", error);
     throw error;
   }
 };

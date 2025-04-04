@@ -154,71 +154,74 @@ const addTweetComment = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, comment, "Comment added successfully"));
 });
 
-// const updateComment = asyncHandler(async (req, res) => {
-//   // TODO: update a comment
-//   const { commentId } = req.params;
-//   const { content } = req.body;
+const updateTweetComment = asyncHandler(async (req, res) => {
+  // TODO: update a comment
+  
+  const { tweetId } = req.params;
+  const { content } = req.body;
+  console.log("content",content)
 
-//   if (!commentId) {
-//     throw new ApiError(400, "Comment Id is required");
-//   }
+  if (!tweetId) {
+    throw new ApiError(400, "Comment Id is required");
+  }
 
-//   if (!isValidObjectId(commentId)) {
-//     throw new ApiError(400, "Invalid Comment Id");
-//   }
+  if (!isValidObjectId(tweetId)) {
+    throw new ApiError(400, "Invalid Comment Id");
+  }
 
-//   const comment = await Comment.findById(commentId);
-//   if (!comment) {
-//     throw new ApiError(404, "Comment not found");
-//   }
+  const tcomment = await TweetComment.findById(tweetId);
+  if (!tcomment) {
+    throw new ApiError(404, "Comment not found");
+  }
+  if (!content?.trim()) {
+    throw new ApiError(400, "Content is required");
+  }
 
-//   if (!content?.trim()) {
-//     throw new ApiError(400, "Content is required");
-//   }
+  console.log("req.user._id.toString()",req.user._id.toString())
+  console.log("tcomment.owner.toString()",tcomment.owner.toString())
+  if (tcomment.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not autorized to update this tcomment");
+  }
 
-//   if (comment.owner.toString() !== req.user._id.toString()) {
-//     throw new ApiError(403, "Ypu are not autorized to update this comment");
-//   }
+  const updatedComment = await TweetComment.findByIdAndUpdate(
+    tweetId,
+    {
+      $set: { content: content.trim() },
+    },
+    { new: true }
+  );
 
-//   const updatedComment = await Comment.findByIdAndUpdate(
-//     commentId,
-//     {
-//       $set: { content: content.trim() },
-//     },
-//     { new: true }
-//   );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedComment, "Tweet Comment updated successfully"));
+});
 
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, updatedComment, "Comment updated successfully"));
-// });
+const deleteTweetComment = asyncHandler(async (req, res) => {
+  // TODO: delete a comment
+  const { tweetId } = req.params;
 
-// const deleteComment = asyncHandler(async (req, res) => {
-//   // TODO: delete a comment
-//   const { commentId } = req.params;
+  if (!tweetId) {
+    throw new ApiError(400, "tcomment Id is required");
+  }
 
-//   if (!commentId) {
-//     throw new ApiError(400, "Comment Id is required");
-//   }
+  if (!isValidObjectId(tweetId)) {
+    throw new ApiError(400, "Invalid tcomment Id");
+  }
 
-//   if (!isValidObjectId(commentId)) {
-//     throw new ApiError(400, "Invalid Comment Id");
-//   }
+  const tcomment = await TweetComment.findById(tweetId);
+  if (!tcomment) {
+    throw new ApiError(404, "tcomment not found");
+  }
 
-//   const comment = await Comment.findById(commentId);
-//   if (!comment) {
-//     throw new ApiError(404, "Comment not found");
-//   }
+  if (tcomment.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not authorized to delete this tcomment");
+  }
 
-//   if (comment.owner.toString() !== req.user._id.toString()) {
-//     throw new ApiError(403, "You are not authorized to delete this comment");
-//   }
+  await TweetComment.findByIdAndDelete(tweetId);
 
-//   await Comment.findByIdAndDelete(commentId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "tcomment deleted successfully"));
+});
 
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, {}, "Comment deleted successfully"));
-// });
-
-export { getTweetComments, addTweetComment};
+export { getTweetComments, addTweetComment, updateTweetComment, deleteTweetComment};

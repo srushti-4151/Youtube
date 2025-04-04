@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -15,9 +15,25 @@ import { handleError, handleSuccess } from "../../utils/toast.js";
 import { fetchTweetById } from "../../redux/slices/TweetSlice.js";
 import {
   createTweetComment,
+  editTweetComment,
   fetchTweetComments,
+  removeTweetComment,
 } from "../../redux/slices/TweetCommentSlice.js";
-import { getTweetLikesStatusapi, toggleTweetLikeThunk } from "../../redux/slices/Likeslice.js";
+import {
+  getTweetCommentLikesStatusapi,
+  getTweetLikesStatusapi,
+  toggleTweetCommentLikeThunk,
+  toggleTweetLikeThunk,
+} from "../../redux/slices/Likeslice.js";
+import {
+  FaRegThumbsUp,
+  FaThumbsUp,
+  FaRegThumbsDown,
+  FaThumbsDown,
+} from "react-icons/fa";
+import { BsDot } from "react-icons/bs";
+import { FiMoreVertical } from "react-icons/fi";
+import { FaFlag } from "react-icons/fa";
 
 const Tweetpage = () => {
   const { tweetId } = useParams();
@@ -45,36 +61,33 @@ const Tweetpage = () => {
   }, [dispatch, tweetId]);
 
   useEffect(() => {
-    dispatch(getTweetLikesStatusapi(tweet._id));
+    if (tweet?._id) {
+      dispatch(getTweetLikesStatusapi(tweet._id));
+    }
   }, [tweet]);
 
-  const { likeStatusTweet } = useSelector((state) => state.like);
-  console.log("likeStatusTweet.......................", likeStatusTweet);
-  const tweetLikes = likeStatusTweet[tweet._id] || {}; 
+  useEffect(() => {
+    comments.forEach((comment) => {
+      dispatch(getTweetCommentLikesStatusapi(comment._id));
+    });
+  }, [dispatch, comments, tweetId]);
 
-
-  const handleLikeToggle = async (tweetId, type) => {
-    console.log("tweet is in handle", tweetId, type);
-    if (!isAuthenticated) {
-      handleSuccess("Please login to like or dislike");
-      return;
-    }
-    try {
-      console.log("tweet id and type", tweetId, type);
-      const togleres = await dispatch(
-        toggleTweetLikeThunk({ tweetId, type })
-      ).unwrap();
-      if (togleres) {
-        handleSuccess("like toggle");
-      }
-      dispatch(getTweetLikesStatusapi(tweetId)); // Refetch like status after toggling
-    } catch (error) {
-      console.error("Error toggling like:", error);
-    }
-  };
+  const { likeStatusTweet, likeStatusTweetComments } = useSelector(
+    (state) => state.like
+  );
+  console.log(
+    " likeStatusTweetComments.......................",
+    likeStatusTweetComments
+  );
+  const tweetLikes = likeStatusTweet[tweet._id] || {};
 
   // Handle comment submission
   const onSubmit = async (data) => {
+    if (!isAuthenticated) {
+      handleSuccess("please loggin to comment !");
+      return 
+    }
+
     if (!data.content.trim()) return;
 
     try {
@@ -95,6 +108,110 @@ const Tweetpage = () => {
       handleError(error.message || "Failed to add comment");
     }
   };
+
+  const handleLikeToggle = async (tweetComId, type) => {
+    if (!isAuthenticated) {
+      handleSuccess("Please login to like or dislike");
+      return;
+    }
+    try {
+      console.log("comment id and type", tweetComId, type);
+      const togleres = await dispatch(
+        toggleTweetCommentLikeThunk({ tweetComId, type })
+      ).unwrap();
+      if (togleres) {
+        handleSuccess("like toggle");
+      }
+      dispatch(getTweetCommentLikesStatusapi(tweetComId)); // Refetch like status after toggling
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+
+  const handleTweetLikeToggle = async (tweetId, type) => {
+    console.log("tweet is in handle", tweetId, type);
+    if (!isAuthenticated) {
+      handleSuccess("Please login to like or dislike");
+      return;
+    }
+    try {
+      console.log("tweet id and type", tweetId, type);
+      const togleres = await dispatch(
+        toggleTweetLikeThunk({ tweetId, type })
+      ).unwrap();
+      if (togleres) {
+        handleSuccess("like toggle");
+      }
+      dispatch(getTweetLikesStatusapi(tweetId)); // Refetch like status after toggling
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const dropdownRef = useRef(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [editContent, setEditContent] = useState("");
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment._id);
+    setEditContent(comment.content);
+  };
+
+  const handleUpdateComment = async (commentId) => {
+    if (!editContent.trim()) {
+      handleError("Comment cannot be empty");
+      return;
+    }
+  
+    try {
+      await dispatch(
+        editTweetComment({
+          tweetId: commentId, 
+          updatedData: {
+            content: editContent,
+          },
+        })
+      ).unwrap();
+  
+      handleSuccess("Comment updated successfully");
+      setEditingComment(null);
+      dispatch(fetchTweetComments(tweetId));
+    } catch (error) {
+      handleError(error.message || "Failed to update comment");
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await dispatch(removeTweetComment(commentId)).unwrap();
+      handleSuccess("Comment deleted successfully");
+      dispatch(fetchTweetComments(tweetId));
+    } catch (error) {
+      handleError(error.message || "Failed to delete comment");
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingComment(null);
+    setEditContent("");
+  };
+
+ useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target) &&
+      !event.target.closest(".dropdown-button") // Prevents closing when clicking the button
+    ) {
+      setOpenDropdownId(null);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
   if (tweetLoading) {
     return (
@@ -123,7 +240,7 @@ const Tweetpage = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
-      {/* Tweet Card (unchanged) */}
+      {/* Tweet Card  */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
         {/* Tweet Header */}
         <div className="p-4 flex items-center space-x-3 border-b border-gray-200 dark:border-gray-700">
@@ -169,7 +286,7 @@ const Tweetpage = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleLikeToggle(tweet._id, "like");
+                handleTweetLikeToggle(tweet._id, "like");
               }}
               className={`flex items-center space-x-1 transition-colors ${
                 tweetLikes.isLiked
@@ -188,7 +305,7 @@ const Tweetpage = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleLikeToggle(tweet._id, "dislike");
+                handleTweetLikeToggle(tweet._id, "dislike");
               }}
               className={`flex items-center space-x-1 transition-colors ${
                 tweetLikes.isDisliked
@@ -232,40 +349,39 @@ const Tweetpage = () => {
             Comments ({tweet.commentsCount || 0})
           </h3>
         </div>
-
         {/* Comment Form */}
-        {isAuthenticated && (
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="p-4 border-b border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-start space-x-3">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="p-4 border-b border-gray-200 dark:border-gray-700"
+        >
+          <div className="flex items-start space-x-3">
+            {user && (
               <img
-                src={user.avatar}
-                alt={user.fullName}
+                src={user?.avatar}
+                alt={user?.fullName}
                 className="w-10 h-10 rounded-full object-cover"
               />
-              <div className="flex-1 flex items-center">
-                <input
-                  type="text"
-                  {...register("content")}
-                  placeholder="Write a comment..."
-                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isSubmitting}
-                />
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="ml-2 p-2 text-blue-500 hover:text-blue-600 disabled:text-gray-400"
-                >
-                  <FiSend size={20} />
-                </button>
-              </div>
+            )}
+            <div className="flex-1 flex items-center">
+              <input
+                type="text"
+                {...register("content")}
+                placeholder="Write a comment..."
+                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="ml-2 p-2 text-blue-500 hover:text-blue-600 disabled:text-gray-400"
+              >
+                <FiSend size={20} />
+              </button>
             </div>
-          </form>
-        )}
-
+          </div>
+        </form>
         {/* Comments List */}
+
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {commentsLoading ? (
             <div className="p-4 flex justify-center">
@@ -273,48 +389,169 @@ const Tweetpage = () => {
             </div>
           ) : comments.length === 0 ? (
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              No comments yet
+              No comments yet. Be the first to comment!
             </div>
           ) : (
-            comments.map((comment) => (
-              <div key={comment._id} className="p-4">
-                <div className="flex space-x-3">
-                  <img
-                    src={comment.owner?.avatar}
-                    alt={comment.owner?.fullName}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-baseline space-x-2">
-                      <h4 className="font-medium text-gray-800 dark:text-gray-100">
-                        {comment.owner?.fullName}
-                      </h4>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        @{comment.owner?.username}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-gray-800 dark:text-gray-200">
-                      {comment.content}
-                    </p>
-                    <div className="mt-2 flex items-center space-x-4">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                      {/* <div className="flex space-x-2 text-xs">
-                        <button className="text-gray-500 dark:text-gray-400 hover:text-blue-500">
-                          Reply
+            comments.map((comment) => {
+              const likeStatus = likeStatusTweetComments[comment._id] || {};
+              const isOwner = comment.owner?._id === user?._id;
+
+              return (
+                <div
+                  key={comment._id}
+                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150"
+                >
+                  <div className="flex space-x-3">
+                    <img
+                      src={comment.owner?.avatar}
+                      alt={comment.owner?.fullName}
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-start">
+                        <div className="flex flex-col">
+                          <h4 className="font-semibold text-gray-800 dark:text-gray-100 truncate">
+                            {comment.owner?.fullName}
+                          </h4>
+                          <span className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            @{comment.owner?.username}
+                          </span>
+                        </div>
+                        <BsDot className="text-gray-400 pt-1" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400 pt-1">
+                          {new Date(comment.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      {/* <p className="mt-1 text-gray-800 dark:text-gray-200 break-words">
+                        {comment.content}
+                      </p> */}
+                      {editingComment === comment._id ? (
+                        <div className="mt-2">
+                          <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                            rows="3"
+                          />
+                          <div className="flex justify-end space-x-2 mt-2">
+                            <button
+                              onClick={cancelEdit}
+                              className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleUpdateComment(comment._id)}
+                              className="px-3 py-1 text-sm text-white bg-blue-500 rounded-md hover:bg-blue-600"
+                            >
+                              Update
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-gray-800 dark:text-gray-200 break-words">
+                          {comment.content}
+                        </p>
+                      )}
+
+                      {/* Like & Dislike Section */}
+                      <div className="mt-3 flex items-center space-x-2">
+                        <button
+                          onClick={() => handleLikeToggle(comment._id, "like")}
+                          className={`flex items-center space-x-1 px-1.5 py-1 rounded-full transition-colors duration-200 ${
+                            likeStatus?.isLiked
+                              ? "text-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                              : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          }`}
+                        >
+                          {likeStatus?.isLiked ? (
+                            <FaThumbsUp className="text-sm" />
+                          ) : (
+                            <FaRegThumbsUp className="text-sm" />
+                          )}
+                          <span className="text-xs font-medium">
+                            {likeStatus?.likesCount || 0}
+                          </span>
                         </button>
-                        {comment.owner?._id === user?._id && (
-                          <button className="text-gray-500 dark:text-gray-400 hover:text-red-500">
-                            Delete
-                          </button>
-                        )}
-                      </div> */}
+
+                        <button
+                          onClick={() =>
+                            handleLikeToggle(comment._id, "dislike")
+                          }
+                          className={`flex items-center space-x-1 px-1.5 py-1 rounded-full transition-colors duration-200 ${
+                            likeStatus?.isDisliked
+                              ? "text-red-500 bg-red-50 dark:bg-red-900/30"
+                              : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          }`}
+                        >
+                          {likeStatus?.isDisliked ? (
+                            <FaThumbsDown className="text-sm" />
+                          ) : (
+                            <FaRegThumbsDown className="text-sm" />
+                          )}
+                          <span className="text-xs font-medium">
+                            {likeStatus?.dislikesCount || 0}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                    {/* Three dots dropdown */}
+                    <div className="relative" ref={dropdownRef}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenDropdownId(
+                            openDropdownId === comment._id ? null : comment._id
+                          );
+                        }}
+                        className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        <FiMoreVertical />
+                      </button>
+
+                      {openDropdownId === comment._id && (
+                        <div className="dropdown-button absolute right-0 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                          {isOwner ? (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditComment(comment);
+                                }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <FiEdit className="mr-2" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteComment(comment._id);
+                                }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <FiTrash2 className="mr-2" />
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-white-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <FaFlag className="mr-2" />
+                              Report
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     createTweet,
     deleteTweet,
+    getAllTweets,
     getTweetById,
     getUserTweets,
     updateTweet,
@@ -10,6 +11,7 @@ import {verifyJWT} from "../middlewares/auth.middleware.js"
 import { upload } from '../middlewares/multer.middleware.js';
 
 const router = Router();
+router.route("/all").get(getAllTweets);
 router.route("/user/:userId").get(getUserTweets);
 router.route("/tid/:tweetId").get(getTweetById);
 

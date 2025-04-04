@@ -6,87 +6,9 @@ import { asyncHandler } from "../utils/AsyncHandler.js";
 import { Video } from "../models/video.model.js";
 import { Comment } from "../models/comment.model.js";
 import { Tweet } from "../models/tweet.model.js";
+import { TweetComment } from "../models/tweetcomment.model.js";
 
-// const toggleVideoLike = asyncHandler(async (req, res) => {
-//   const { videoId } = req.params;
-//   const { type } = req.body;
-//   const userId = req.user?._id;
-
-//   // Validate videoId
-//   if (!videoId) throw new ApiError(400, "Video ID is required");
-//   if (!isValidObjectId(videoId)) throw new ApiError(400, "Invalid Video ID");
-
-//   // Check if the video exists
-//   const video = await Video.findById(videoId);
-//   if (!video) throw new ApiError(404, "Video not found");
-
-//   // Aggregation to fetch updated counts and user reaction
-//   const updatedStats = await Like.aggregate([
-//     { $match: { video: new mongoose.Types.ObjectId(videoId) } },
-//     {
-//       $group: {
-//         _id: "$video",
-//         likesCount: { $sum: { $cond: [{ $eq: ["$type", "like"] }, 1, 0] } },
-//         dislikesCount: { $sum: { $cond: [{ $eq: ["$type", "dislike"] }, 1, 0] } },
-//         likedByUsers: { $push: { type: "$type", user: { $toString: "$likedBy" } } },
-//       },
-//     },
-//     {
-//       $addFields: {
-//         isLiked: {
-//           $gt: [
-//             {
-//               $size: {
-//                 $filter: {
-//                   input: "$likedByUsers",
-//                   as: "like",
-//                   cond: {
-//                     $and: [
-//                       { $eq: ["$$like.type", "like"] },
-//                       { $eq: ["$$like.user", userId.toString()] },
-//                     ],
-//                   },
-//                 },
-//               },
-//             },
-//             0,
-//           ],
-//         },
-//         isDisliked: {
-//           $gt: [
-//             {
-//               $size: {
-//                 $filter: {
-//                   input: "$likedByUsers",
-//                   as: "dislike",
-//                   cond: {
-//                     $and: [
-//                       { $eq: ["$$dislike.type", "dislike"] },
-//                       { $eq: ["$$dislike.user", userId.toString()] },
-//                     ],
-//                   },
-//                 },
-//               },
-//             },
-//             0,
-//           ],
-//         },
-//       },
-//     },
-//     { $project: { likedByUsers: 0 } }, // Remove unnecessary data
-//   ]);
-
-//   // Default stats if no likes/dislikes exist
-//   const stats = updatedStats[0] || {
-//     likesCount: 0,
-//     dislikesCount: 0,
-//     isLiked: false,
-//     isDisliked: false,
-//   };
-
-//   return res.status(200).json(new ApiResponse(200, stats, message));
-// });
-
+// VIDEO LIKE
 const getVideoLikesStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const userId = req.user?._id || null;
@@ -230,6 +152,84 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   }
 });
 
+const getLikedVideos = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  if (page < 1) {
+    throw new ApiError(400, "Invalid page number");
+  }
+
+  const skip = (page - 1) * limit;
+
+  const results = await Like.aggregate([
+    { $match: { likedBy: req.user?._id } }, // Match likes by user
+
+    {
+      $lookup: {
+        from: "videos", // Join with videos collection
+        localField: "video",
+        foreignField: "_id",
+        as: "videoData",
+      },
+    },
+
+    { $unwind: "$videoData" }, // Flatten the array
+
+    { $match: { "videoData.isPublished": true } }, // Only published videos
+
+    {
+      $lookup: {
+        from: "users", // Join with users collection to get owner details
+        localField: "videoData.owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              _id: 1, // Always include _id
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$owner" },
+
+    {
+      $project: {
+        _id: 0,
+        video: {
+          _id: "$videoData._id",
+          thumbnail: "$videoData.thumbnail",
+          title: "$videoData.title",
+          description: "$videoData.description",
+          duration: "$videoData.duration",
+          views: "$videoData.views",
+          owner: "$owner", // Includes only selected fields
+        },
+      },
+    },
+    { $skip: skip },
+    { $limit: Number(limit) },
+  ]);
+
+  const totalLikedVideos = await Like.countDocuments({ likedBy: req.user?._id });
+  const totalPages = Math.ceil(totalLikedVideos / limit);
+  const pagination = {
+    totalPages,
+    currentPage: Number(page),
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
+    totalLikedVideos,
+  };
+
+  return res.status(200).json(
+    new ApiResponse(200, { videos: results.map((v) => v.video), pagination }, "Liked videos fetched successfully")
+  );
+});
+
+// VIDEO COMMENT LIKE
 const getCommentLikesStatus = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const userId = req.user?._id || null;
@@ -256,7 +256,7 @@ const getCommentLikesStatus = asyncHandler(async (req, res) => {
         isLiked: userId ? {
           $in: [
             new mongoose.Types.ObjectId(userId),
-            {
+            { //itne user ne like kiya he (userid array)
               $map: {
                 input: { $filter: { input: "$userReaction", as: "reaction", cond: { $eq: ["$$reaction.type", "like"] } } },
                 as: "filteredLike",
@@ -311,11 +311,11 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
   //TODO: toggle like on comment
   if (!commentId) {
-    throw new ApiError(400, "Video Id is Required");
+    throw new ApiError(400, "commentId Id is Required");
   }
 
   if (!isValidObjectId(commentId)) {
-    throw new ApiError(400, "Invalid Video ID");
+    throw new ApiError(400, "Invalid comment ID");
   }
 
   const comment = await Comment.findById(commentId);
@@ -340,6 +340,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   }
 });
 
+//TWEET LIKE 
 const getTweetLikesStatus = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
   const userId = req.user?._id || null;
@@ -457,6 +458,208 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, newReaction, `Tweet ${type}d successfully`));
   }
 });
+
+//TWEET COMMENT LIKE 
+const getTweetCommentLikesStatus = asyncHandler(async (req, res) => {
+  const { tweetComId } = req.params;
+  const userId = req.user?._id || null;
+
+  if(!isValidObjectId(tweetComId)){
+    throw new ApiError(400, "Invalid Commnet Id");
+  }
+
+  const tweetCom = await TweetComment.findById(tweetComId);
+  if(!tweetCom) throw new ApiError(404, "Comment of tweet not found");
+
+  const result = await Like.aggregate([
+    {$match: { tCommnent: new mongoose.Types.ObjectId(tweetComId)}},
+    {
+      $group: {
+        _id: "$tCommnent",
+        likesCount: { $sum: { $cond: [{ $eq: ["$type", "like"] }, 1, 0 ]} },
+        dislikesCount: { $sum: { $cond: [{ $eq: ["$type", "dislike"] }, 1, 0 ]}},
+        userReaction: { $push: { likedBy: "$likedBy", type: "$type" } },
+      },
+    },
+    {
+      $addFields: {
+        isLiked: userId ? {
+          $in: [
+            new mongoose.Types.ObjectId(userId),
+            { //itne user ne like kiya he (userid array)
+              $map: {
+                input: { $filter: { input: "$userReaction", as: "reaction", cond: { $eq: ["$$reaction.type", "like"] } } },
+                as: "filteredLike",
+                in: "$$filteredLike.likedBy",
+              },
+            },
+          ],
+        } : false ,
+        isDisliked: userId ? {
+          $in: [
+            new mongoose.Types.ObjectId(userId),
+            {
+              $map: {
+                input: { $filter: { input: "$userReaction", as: "reaction", cond: { $eq: ["$$reaction.type", "dislike"] } } },
+                as: "filteredDislike",
+                in: "$$filteredDislike.likedBy",
+              },
+            },
+          ],
+        } : false ,
+      },
+    },
+    { $project: { userReaction: 0 } },
+  ]);
+
+  if(!result.length){
+    return res.status(200).json(
+      new ApiResponse(200, { 
+        tweetComId, 
+        isLiked: false, 
+        isDisliked: false, 
+        likesCount: 0, 
+        dislikesCount: 0 
+      }, "TweetComment like status fetched successfully")
+    );
+  }
+
+  const responseData = {
+    tweetComId,  // Add the commentId explicitly
+    likesCount: result[0].likesCount || 0,
+    dislikesCount: result[0].dislikesCount || 0,
+    isLiked: result[0].isLiked || false,
+    isDisliked: result[0].isDisliked || false
+  };
+
+  return res.status(200).json(new ApiResponse(200, responseData, "Tweet Comment like status fetched successfully"));
+
+})
+
+const toggleTweetCommentLike = asyncHandler(async (req, res) => {
+  const { tweetComId } = req.params;
+  const { type } = req.body;
+
+  if (!tweetComId) {
+    throw new ApiError(400, "tweetComId Id is Required");
+  }
+
+  if (!isValidObjectId(tweetComId)) {
+    throw new ApiError(400, "Invalid Tweet comment ID");
+  }
+
+  const tweetCom = await TweetComment.findById(tweetComId);
+  if (!tweetCom) {
+    throw new ApiError(404, "tweetComment not found");
+  }
+
+  const existingReaction = await Like.findOne({ tCommnent: tweetComId, likedBy: req.user?._id})
+  if (existingReaction) {
+    if (existingReaction.type === type) {
+      await Like.findByIdAndDelete(existingReaction._id);
+      return res.status(200).json(new ApiResponse(200, {}, `${type} removed successfully`));
+    } else {
+      existingReaction.type = type;
+      await existingReaction.save();
+      return res.status(200).json(new ApiResponse(200, existingReaction, `Tweet Comment ${type}d successfully`));
+    }
+  } else {
+    const newReaction = await Like.create({ tCommnent: tweetComId, likedBy: req.user?._id, type });
+    return res.status(200).json(new ApiResponse(200, newReaction, `Tweet Comment ${type}d successfully`));
+  }
+}) 
+
+export {
+  getVideoLikesStatus,  
+  getCommentLikesStatus, 
+  getTweetLikesStatus, 
+  toggleCommentLike, 
+  toggleTweetLike, 
+  toggleVideoLike, 
+  getLikedVideos,
+  getTweetCommentLikesStatus,
+  toggleTweetCommentLike,
+ };
+
+// const toggleVideoLike = asyncHandler(async (req, res) => {
+//   const { videoId } = req.params;
+//   const { type } = req.body;
+//   const userId = req.user?._id;
+
+//   // Validate videoId
+//   if (!videoId) throw new ApiError(400, "Video ID is required");
+//   if (!isValidObjectId(videoId)) throw new ApiError(400, "Invalid Video ID");
+
+//   // Check if the video exists
+//   const video = await Video.findById(videoId);
+//   if (!video) throw new ApiError(404, "Video not found");
+
+//   // Aggregation to fetch updated counts and user reaction
+//   const updatedStats = await Like.aggregate([
+//     { $match: { video: new mongoose.Types.ObjectId(videoId) } },
+//     {
+//       $group: {
+//         _id: "$video",
+//         likesCount: { $sum: { $cond: [{ $eq: ["$type", "like"] }, 1, 0] } },
+//         dislikesCount: { $sum: { $cond: [{ $eq: ["$type", "dislike"] }, 1, 0] } },
+//         likedByUsers: { $push: { type: "$type", user: { $toString: "$likedBy" } } },
+//       },
+//     },
+//     {
+//       $addFields: {
+//         isLiked: {
+//           $gt: [
+//             {
+//               $size: {
+//                 $filter: {
+//                   input: "$likedByUsers",
+//                   as: "like",
+//                   cond: {
+//                     $and: [
+//                       { $eq: ["$$like.type", "like"] },
+//                       { $eq: ["$$like.user", userId.toString()] },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//             0,
+//           ],
+//         },
+//         isDisliked: {
+//           $gt: [
+//             {
+//               $size: {
+//                 $filter: {
+//                   input: "$likedByUsers",
+//                   as: "dislike",
+//                   cond: {
+//                     $and: [
+//                       { $eq: ["$$dislike.type", "dislike"] },
+//                       { $eq: ["$$dislike.user", userId.toString()] },
+//                     ],
+//                   },
+//                 },
+//               },
+//             },
+//             0,
+//           ],
+//         },
+//       },
+//     },
+//     { $project: { likedByUsers: 0 } }, // Remove unnecessary data
+//   ]);
+
+//   // Default stats if no likes/dislikes exist
+//   const stats = updatedStats[0] || {
+//     likesCount: 0,
+//     dislikesCount: 0,
+//     isLiked: false,
+//     isDisliked: false,
+//   };
+
+//   return res.status(200).json(new ApiResponse(200, stats, message));
+// });
 
 // Get Tweet Like Status
 // const getTweetLikesStatus = asyncHandler(async (req, res) => {
@@ -706,84 +909,3 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 //     new ApiResponse(200, { videos: results.map((v) => v.video), pagination }, "Liked videos fetched successfully")
 //   );
 // });
-
-const getLikedVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
-  if (page < 1) {
-    throw new ApiError(400, "Invalid page number");
-  }
-
-  const skip = (page - 1) * limit;
-
-  const results = await Like.aggregate([
-    { $match: { likedBy: req.user?._id } }, // Match likes by user
-
-    {
-      $lookup: {
-        from: "videos", // Join with videos collection
-        localField: "video",
-        foreignField: "_id",
-        as: "videoData",
-      },
-    },
-
-    { $unwind: "$videoData" }, // Flatten the array
-
-    { $match: { "videoData.isPublished": true } }, // Only published videos
-
-    {
-      $lookup: {
-        from: "users", // Join with users collection to get owner details
-        localField: "videoData.owner",
-        foreignField: "_id",
-        as: "owner",
-        pipeline: [
-          {
-            $project: {
-              _id: 1, // Always include _id
-              username: 1,
-              fullName: 1,
-              avatar: 1,
-            },
-          },
-        ],
-      },
-    },
-    { $unwind: "$owner" },
-
-    {
-      $project: {
-        _id: 0,
-        video: {
-          _id: "$videoData._id",
-          thumbnail: "$videoData.thumbnail",
-          title: "$videoData.title",
-          description: "$videoData.description",
-          duration: "$videoData.duration",
-          views: "$videoData.views",
-          owner: "$owner", // Includes only selected fields
-        },
-      },
-    },
-    { $skip: skip },
-    { $limit: Number(limit) },
-  ]);
-
-  const totalLikedVideos = await Like.countDocuments({ likedBy: req.user?._id });
-  const totalPages = Math.ceil(totalLikedVideos / limit);
-  const pagination = {
-    totalPages,
-    currentPage: Number(page),
-    hasNextPage: page < totalPages,
-    hasPreviousPage: page > 1,
-    totalLikedVideos,
-  };
-
-  return res.status(200).json(
-    new ApiResponse(200, { videos: results.map((v) => v.video), pagination }, "Liked videos fetched successfully")
-  );
-});
-
-
-
-export {getVideoLikesStatus,  getCommentLikesStatus, getTweetLikesStatus, toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
