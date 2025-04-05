@@ -19,7 +19,16 @@ export const fetchVideoComments = createAsyncThunk(
 
 export const createComment = createAsyncThunk(
   "comments/createComment",
-  async ({ videoId, commentData }, thunkAPI) => {
+  // async ({ videoId, commentData }, thunkAPI) => {
+  //   const response = await addComment(videoId, commentData);
+  //   if (!response.success) return thunkAPI.rejectWithValue(response.message);
+  //   return response.data;
+  // }
+  async ({ videoId, content, parentComment = null }, thunkAPI) => {
+    const commentData = { content };
+    if (parentComment) {
+      commentData.parentComment = parentComment; // Only add if it's a reply
+    }
     const response = await addComment(videoId, commentData);
     if (!response.success) return thunkAPI.rejectWithValue(response.message);
     return response.data;

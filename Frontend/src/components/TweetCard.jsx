@@ -7,7 +7,7 @@ const TweetCard = ({ tweet }) => {
   return (
     <div className="rounded-lg h-fit overflow-visible transition-transform duration-300 cursor-pointer hover:shadow-lg border dark:border-gray-800 border-gray-300 dark:hover:shadow-gray-700">
       {/* Tweet Info */}
-      <div className="px-4 py-3 flex">
+      <div className="px-4 pt-3 flex">
         <Link to={`/profile/${tweet.owner.username}`} className="block">
           <img
             src={tweet.owner.avatar}
@@ -32,9 +32,9 @@ const TweetCard = ({ tweet }) => {
       </div>
 
       {/* Tweet Content */}
-      <Link to={`/tweet/${tweet._id}`} className="relative block w-full px-4 py-2">
+      <Link to={`/tweet/${tweet._id}`} className="relative block w-full px-4">
         {/* Tweet text */}
-        <div className="mb-3">
+        <div className="mb-2">
           <p className="text-[15px] dark:text-gray-200 text-gray-800 line-clamp-3 overflow-hidden text-ellipsis">
             {tweet.content}
           </p>

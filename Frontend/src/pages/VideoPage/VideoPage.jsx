@@ -22,7 +22,7 @@ import {
   editComment,
 } from "../../redux/slices/CommentSlice.js";
 import { handleError, handleSuccess } from "../../utils/toast.js";
-import { FaEdit, FaTrash, FaFlag } from "react-icons/fa";
+import { FaEdit, FaTrash, FaFlag, FaAngleDown } from "react-icons/fa";
 import {
   checkIsSubscribed,
   toggleUserSubscription,
@@ -35,6 +35,7 @@ import {
 } from "../../redux/slices/Likeslice.js";
 import RecommendedVideos from "../../components/RecommendedVideos.jsx";
 import { countView } from "../../api/viewsApi.js";
+
 // import { addHistory } from "../../redux/slices/ViewSlice.js";
 
 const VideoPage = () => {
@@ -47,6 +48,11 @@ const VideoPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
   const menuRef = useRef(null);
+  const [visibleReplies, setVisibleReplies] = useState(null); // Track which comment is expanded
+
+  const toggleReplies = (commentId) => {
+    setVisibleReplies(visibleReplies === commentId ? null : commentId);
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -65,14 +71,13 @@ const VideoPage = () => {
     if (!id) return;
 
     const timeout = setTimeout(() => {
-      console.log("Adding to watch history:", id); 
+      console.log("Adding to watch history:", id);
       countView(id); // Call API after delay
       // dispatch(addHistory(id));
     }, 5000); // Wait 5 seconds before counting view
 
     return () => clearTimeout(timeout); // Cleanup on unmount
-
-  }, [id]);  
+  }, [id]);
 
   const { comments } = useSelector((state) => state.comments);
   const { selectedVideo, isLoading, error } = useSelector(
@@ -97,35 +102,6 @@ const VideoPage = () => {
 
   const { isSubscribed } = useSelector((state) => state.subscriptions);
 
-  // Handle comment submission
-  const handleAddComment = async () => {
-    if(!isAuthenticated) {
-      handleSuccess("please login to comment");
-      return;
-    }
-    if (!comment.trim()) return;
-
-    const newComment = {
-      content: comment.trim(), // Change "text" to "content"
-    };
-
-    try {
-      // await dispatch(createComment({ videoId, commentData: newComment }));
-      const result = await dispatch(
-        createComment({ videoId: id, commentData: newComment })
-      );
-      if (result) {
-        handleSuccess("comment Added successfully!");
-      }
-      setComment(""); // Clear input after success
-      setIsFocused(false);
-      dispatch(fetchVideoComments(id));
-    } catch (error) {
-      handleError("error adding comment");
-      console.error("Failed to add comment:", error);
-    }
-  };
-
   useEffect(() => {
     dispatch(fetchVideoById(id));
   }, [id, dispatch]);
@@ -136,12 +112,6 @@ const VideoPage = () => {
       dispatch(fetchUserChannelProfile(selectedVideo.owner.username));
     }
   }, [selectedVideo, isSubscribed]);
-
-  useEffect(() => {
-    if (comments?.comments) {
-      setIsShowmoreCom(Array(comments.comments.length).fill(false));
-    }
-  }, [comments]);
 
   useEffect(() => {
     if (isOpen) {
@@ -265,8 +235,8 @@ const VideoPage = () => {
   }, [comments?.comments]);
 
   const handleLikeToggle = async (commentId, type) => {
-    if(!isAuthenticated){
-      handleSuccess("Please login to like or dislike")
+    if (!isAuthenticated) {
+      handleSuccess("Please login to like or dislike");
       return;
     }
     try {
@@ -282,6 +252,82 @@ const VideoPage = () => {
       console.error("Error toggling like:", error);
     }
   };
+
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  // Modified handleAddComment to handle both comments and replies
+  const handleAddComment = async (parentCommentId = null) => {
+    if (!isAuthenticated) {
+      handleSuccess("Please login to comment");
+      return;
+    }
+
+    const content = parentCommentId ? replyText : comment;
+    console.log("content==============", content);
+    if (!content.trim()) return;
+
+    try {
+      const result = await dispatch(
+        createComment({
+          videoId: id,
+          content: content.trim(),
+          parentComment: parentCommentId,
+        })
+      );
+
+      if (result) {
+        handleSuccess(
+          parentCommentId
+            ? "Reply added successfully!"
+            : "Comment added successfully!"
+        );
+
+        // Reset the appropriate state
+        if (parentCommentId) {
+          setReplyText("");
+          setReplyingTo(null);
+        } else {
+          setComment("");
+          setIsFocused(false);
+        }
+
+        dispatch(fetchVideoComments(id));
+      }
+    } catch (error) {
+      handleError(
+        parentCommentId ? "Failed to add reply" : "Failed to add comment"
+      );
+      console.error("Error:", error);
+    }
+  };
+  // Handle comment submission
+  // const handleAddComment = async () => {
+  //   if (!isAuthenticated) {
+  //     handleSuccess("please login to comment");
+  //     return;
+  //   }
+  //   if (!comment.trim()) return;
+
+  //   const newComment = {
+  //     content: comment.trim(), // Change "text" to "content"
+  //   };
+
+  //   try {
+  //     // await dispatch(createComment({ videoId, commentData: newComment }));
+  //     const result = await dispatch(
+  //       createComment({ videoId: id, commentData: newComment })
+  //     );
+  //     if (result) {
+  //       handleSuccess("comment Added successfully!");
+  //     }
+  //     setComment(""); // Clear input after success
+  //     setIsFocused(false);
+  //     dispatch(fetchVideoComments(id));
+  //   } catch (error) {
+  //     handleError("error adding comment");
+  //     console.error("Failed to add comment:", error);
+  //   }
+  // };
 
   if (isLoading) {
     return (
@@ -502,7 +548,7 @@ const VideoPage = () => {
                   <div className="flex items-center space-x-3 p-2">
                     {/* User Avatar */}
                     <img
-                       src={user?.avatar || img}
+                      src={user?.avatar || img}
                       alt="User Avatar"
                       className="w-12 h-12 rounded-full"
                     />
@@ -534,7 +580,7 @@ const VideoPage = () => {
                         Cancel
                       </button>
                       <button
-                        onClick={handleAddComment}
+                        onClick={() => handleAddComment()}
                         disabled={!comment.trim() || isLoading}
                         className={`px-3 py-2 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                           comment.trim()
@@ -554,138 +600,309 @@ const VideoPage = () => {
                     comments.comments.map((comment, index) => {
                       const shortComment =
                         comment.content.slice(0, 100) + "...";
-                        const commentLikeStatus = likeStatusComments[comment._id] || {
-                          isLiked: false,
-                          isDisliked: false,
-                          likesCount: 0,
-                          dislikesCount: 0
-                        };
+
+                      const commentLikeStatus = likeStatusComments[
+                        comment._id
+                      ] || {
+                        isLiked: false,
+                        isDisliked: false,
+                        likesCount: 0,
+                        dislikesCount: 0,
+                      };
                       return (
                         <div
-                          key={index}
-                          className="flex justify-between px-2 py-4"
+                          key={comment._id}
+                          className="flex flex-row px-2 py-4"
                         >
-                          <div className="flex items-start gap-3">
-                            <img
-                              src={comment.owner.avatar}
-                              alt="Avatar"
-                              className="w-12 h-12 rounded-full"
-                            />
-                            <div>
-                              <p>
-                                <span className="text-[16px]">
-                                  {comment.owner.fullName}
-                                </span>
-                                <span className="ml-2 text-[16px] text-gray-400">
-                                  {timeAgo(comment.createdAt)}
-                                </span>
-                              </p>
-                              <p className="text-[15px]">
+                          <img
+                            src={comment.owner.avatar}
+                            alt="Avatar"
+                            className="w-12 h-12 rounded-full"
+                          />
+                          <div className="flex flex-col flex-1 ml-4">
+                            <p>
+                              <span className="text-[16px]">
                                 @{comment.owner.username}
-                              </p>
+                              </span>
+                              <span className="ml-2 text-[16px] text-gray-400">
+                                {timeAgo(comment.createdAt)}
+                              </span>
+                            </p>
 
-                              {editingCommentId === comment._id ? (
-                                <div className="flex flex-col text-[16px] mt-2 w-[500px] overflow-auto">
-                                  <textarea
-                                    ref={textareaRef}
-                                    value={editedComment}
-                                    onChange={(e) =>
-                                      setEditedComment(e.target.value)
+                            {editingCommentId === comment._id ? (
+                              <div className="flex flex-col text-[16px] mt-2 overflow-auto">
+                                <textarea
+                                  ref={textareaRef}
+                                  value={editedComment}
+                                  onChange={(e) =>
+                                    setEditedComment(e.target.value)
+                                  }
+                                  className="w-full bg-transparent dark:text-white text-black border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12 resize-none overflow-hidden"
+                                  // rows="auto"
+                                  // autoFocus
+                                />
+                                <div className="flex justify-end gap-3 mt-2">
+                                  <button
+                                    onClick={() => setEditingCommentId(null)}
+                                    className="text-gray-400 hover:bg-[#3F3F3F] hover:text-white px-3 py-1 rounded-2xl font-semibold transition-all duration-200"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleEditComment(
+                                        comment._id,
+                                        comment.content
+                                      )
                                     }
-                                    className="w-full bg-transparent dark:text-white text-black border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12 resize-none overflow-hidden"
-                                    // rows="auto"
-                                    // autoFocus
+                                    disabled={!editedComment.trim()}
+                                    className={`px-3 py-1 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                                      editedComment.trim()
+                                        ? "bg-[#65B8FF] hover:bg-[#5295cf] text-black"
+                                        : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                                    }`}
+                                  >
+                                    Save
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-[16px] mt-1.5 break-words whitespace-normal">
+                                {IsShowmoreCom[comment._id]
+                                  ? comment.content
+                                  : comment.content.length > 100
+                                  ? comment.content.slice(0, 100) + "..."
+                                  : comment.content}
+                                {comment.content.length > 100 && (
+                                  <span
+                                    className="text-gray-400 text-[14px] font-semibold cursor-pointer ml-1 hover:underline"
+                                    onClick={() => {
+                                      setIsShowmoreCom((prev) => ({
+                                        ...prev,
+                                        [comment._id]: !prev[comment._id],
+                                      }));
+                                    }}
+                                  >
+                                    {IsShowmoreCom[comment._id]
+                                      ? "Show Less"
+                                      : "Show More"}
+                                  </span>
+                                )}
+                              </p>
+                            )}
+
+                            <div className="flex mt-2">
+                              <button
+                                onClick={() =>
+                                  handleLikeToggle(comment._id, "like")
+                                }
+                                className="flex gap-1"
+                              >
+                                {commentLikeStatus.isLiked ? (
+                                  <BiSolidLike size={20} />
+                                ) : (
+                                  <BiLike size={20} />
+                                )}
+                                <p>{commentLikeStatus.likesCount}</p>
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleLikeToggle(comment._id, "dislike")
+                                }
+                                className="ml-5 flex gap-1"
+                              >
+                                {commentLikeStatus.isDisliked ? (
+                                  <BiSolidDislike size={20} />
+                                ) : (
+                                  <BiDislike size={20} />
+                                )}
+                                <p>{commentLikeStatus.dislikesCount}</p>
+                              </button>
+
+                              <button
+                                className="pl-4 text-sm"
+                                onClick={() =>
+                                  setReplyingTo(
+                                    replyingTo === comment._id
+                                      ? null
+                                      : comment._id
+                                  )
+                                }
+                              >
+                                Reply
+                              </button>
+                            </div>
+                            {/* Reply input section */}
+                            {replyingTo === comment._id && (
+                              <div className="mt-3">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={user?.avatar || img}
+                                    alt="User Avatar"
+                                    className="w-8 h-8 rounded-full"
                                   />
-                                  <div className="flex justify-end gap-3 mt-2">
-                                    <button
-                                      onClick={() => setEditingCommentId(null)}
-                                      className="text-gray-400 hover:bg-[#3F3F3F] hover:text-white px-3 py-1 rounded-2xl font-semibold transition-all duration-200"
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleEditComment(
-                                          comment._id,
-                                          comment.content
-                                        )
+                                  <div className="relative w-full">
+                                    <textarea
+                                      value={replyText}
+                                      onChange={(e) =>
+                                        setReplyText(e.target.value)
                                       }
-                                      disabled={!editedComment.trim()}
-                                      className={`px-3 py-1 rounded-2xl text-sm font-semibold transition-all duration-200 ${
-                                        editedComment.trim()
-                                          ? "bg-[#65B8FF] hover:bg-[#5295cf] text-black"
-                                          : "bg-gray-600 text-gray-400 cursor-not-allowed"
-                                      }`}
-                                    >
-                                      Save
-                                    </button>
+                                      placeholder="Write a reply..."
+                                      className="w-full bg-transparent dark:text-white text-black text-sm border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12 resize-none overflow-hidden"
+                                      rows="1"
+                                      autoFocus
+                                    />
                                   </div>
                                 </div>
-                              ) : (
-                                <p className="max-w-[500px] text-[16px] mt-2 break-words whitespace-normal">
-                                  {IsShowmoreCom[index]
-                                    ? comment.content
-                                    : shortComment}
-                                  {comment.content.length > 100 && (
-                                    <span
-                                      className="text-gray-400 text-[14px] font-semibold cursor-pointer ml-1 hover:underline"
-                                      onClick={() => {
-                                        setIsShowmoreCom((prev) =>
-                                          prev.map((val, i) =>
-                                            i === index ? !val : val
-                                          )
-                                        );
-                                      }}
-                                    >
-                                      {IsShowmoreCom[index]
-                                        ? "Show Less"
-                                        : "Show More"}
-                                    </span>
-                                  )}
-                                </p>
-                              )}
-
-                                <div className="flex mt-2">
+                                <div className="flex justify-end gap-3 mt-2">
+                                  <button
+                                    onClick={() => {
+                                      setReplyingTo(null);
+                                      setReplyText("");
+                                    }}
+                                    className="text-gray-400 hover:bg-[#3F3F3F] hover:text-white px-3 py-1 rounded-2xl text-sm font-semibold transition-all duration-200"
+                                  >
+                                    Cancel
+                                  </button>
                                   <button
                                     onClick={() =>
-                                      handleLikeToggle(comment._id, "like")
-                                    }
-                                    className="flex gap-1"
+                                      handleAddComment(comment._id)
+                                    } // Pass parent comment ID
+                                    disabled={!replyText.trim()}
+                                    className={`px-3 py-1 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                                      replyText.trim()
+                                        ? "bg-[#65B8FF] hover:bg-[#5295cf] text-black"
+                                        : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                                    }`}
                                   >
-                                    {commentLikeStatus.isLiked ? (
-                                      <BiSolidLike size={20} />
-                                    ) : (
-                                      <BiLike size={20} />
-                                    )}
-                                    <p>{commentLikeStatus.likesCount}</p>
-                                  </button>
-
-                                  <button
-                                    onClick={() =>
-                                      handleLikeToggle(comment._id, "dislike")
-                                    }
-                                    className="ml-5 flex gap-1"
-                                  >
-                                    {commentLikeStatus.isDisliked ? (
-                                      <BiSolidDislike size={20} />
-                                    ) : (
-                                      <BiDislike size={20} />
-                                    )}
-                                    <p>{commentLikeStatus.dislikesCount}</p>
-                                  </button>
-
-                                  <button className="pl-4 text-sm">
                                     Reply
                                   </button>
                                 </div>
-                            </div>
+                              </div>
+                            )}
+
+                            {comment.replies.length > 0 && (
+                              <div
+                                className="flex items-center gap-1 mt-3 cursor-pointer text-blue-500"
+                                onClick={() => toggleReplies(comment._id)}
+                              >
+                                <FaAngleDown
+                                  size={20}
+                                  className={`transform transition-transform duration-500 ${
+                                    visibleReplies === comment._id
+                                      ? "rotate-180"
+                                      : "rotate-0"
+                                  }`}
+                                />
+                                <span>
+                                  {comment.replies.length}{" "}
+                                  {comment.replies.length === 1
+                                    ? "Reply"
+                                    : "Replies"}
+                                </span>
+                              </div>
+                            )}
+                            {/* Replies Section (Visible Only if Toggled) */}
+                            {visibleReplies === comment._id && (
+                              <div className="mt-2">
+                                {comment.replies.map((reply) => (
+                                  <div
+                                    key={`reply._id`}
+                                    className="flex gap-3 mt-4"
+                                  >
+                                    <img
+                                      src={reply.owner.avatar}
+                                      alt="Avatar"
+                                      className="w-8 h-8 rounded-full"
+                                    />
+                                    <div>
+                                      <p>
+                                        <span className="text-[16px] dark:text-gray-200 text-gray-800">
+                                          @{reply.owner.username}
+                                        </span>
+                                        <span className="ml-2 text-[13px] dark:text-gray-400 text-gray-80">
+                                          {timeAgo(reply.createdAt)}
+                                        </span>
+                                      </p>
+                                      {editingCommentId === reply._id ? (
+                                        <div className="flex flex-col text-[16px] mt-2 overflow-auto">
+                                          <textarea
+                                            ref={textareaRef}
+                                            value={editedComment}
+                                            onChange={(e) =>
+                                              setEditedComment(e.target.value)
+                                            }
+                                            className="w-full bg-transparent dark:text-white text-black border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12 resize-none overflow-hidden"
+                                            // rows="auto"
+                                            // autoFocus
+                                          />
+                                          <div className="flex justify-end gap-3 mt-2">
+                                            <button
+                                              onClick={() =>
+                                                setEditingCommentId(null)
+                                              }
+                                              className="text-gray-400 hover:bg-[#3F3F3F] hover:text-white px-3 py-1 rounded-2xl font-semibold transition-all duration-200"
+                                            >
+                                              Cancel
+                                            </button>
+                                            <button
+                                              onClick={() =>
+                                                handleEditComment(
+                                                  reply._id,
+                                                  reply.content
+                                                )
+                                              }
+                                              disabled={!editedComment.trim()}
+                                              className={`px-3 py-1 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                                                editedComment.trim()
+                                                  ? "bg-[#65B8FF] hover:bg-[#5295cf] text-black"
+                                                  : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                                              }`}
+                                            >
+                                              Save
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="text-[16px] mt-1.5 break-words whitespace-normal">
+                                          {IsShowmoreCom[reply._id]
+                                            ? reply.content
+                                            : reply.content.length > 100
+                                            ? reply.content.slice(0, 100) +
+                                              "..."
+                                            : reply.content}
+                                          {reply.content.length > 100 && (
+                                            <span
+                                              className="text-gray-400 text-[14px] font-semibold cursor-pointer ml-1 hover:underline"
+                                              onClick={() => {
+                                                setIsShowmoreCom((prev) => ({
+                                                  ...prev,
+                                                  [reply._id]: !prev[reply._id],
+                                                }));
+                                              }}
+                                            >
+                                              {IsShowmoreCom[reply._id]
+                                                ? "Show Less"
+                                                : "Show More"}
+                                            </span>
+                                          )}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           <div className="relative">
                             <button
                               onClick={() =>
                                 setOpenMenuIndex(
-                                  openMenuIndex === index ? null : index
+                                  openMenuIndex === comment._id
+                                    ? null
+                                    : comment._id
                                 )
                               }
                               className="rounded-full"
@@ -694,41 +911,38 @@ const VideoPage = () => {
                             </button>
 
                             {/* Dropdown Menu */}
-                            {openMenuIndex === index && (
+                            {openMenuIndex === comment._id && (
                               <div
                                 ref={menuRef}
                                 className="absolute right-0 mt-2 w-28 dark:text-white text-black shadow-lg rounded-lg p-2 z-10"
                               >
-                                {isAuthenticated && comment.owner._id === user?._id ? (
+                                {isAuthenticated &&
+                                comment.owner._id === user?._id ? (
                                   <>
-                                <button
-                                  className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md"
-                                  onClick={() => {
-                                    setEditingCommentId(comment._id);
-                                    setEditedComment(comment.content);
-                                    setOpenMenuIndex(null);
-                                  }}
-                                >
-                                  <FaEdit className="mr-2" /> Edit
-                                </button>
-                                <button
-                                  className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md text-red-400"
-                                  onClick={() =>
-                                    handleDeleteComment(comment._id)
-                                  }
-                                >
-                                  <FaTrash className="mr-2" /> Delete
-                                </button>
+                                    <button
+                                      className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md"
+                                      onClick={() => {
+                                        setEditingCommentId(comment._id);
+                                        setEditedComment(comment.content);
+                                        setOpenMenuIndex(null);
+                                      }}
+                                    >
+                                      <FaEdit className="mr-2" /> Edit
+                                    </button>
+                                    <button
+                                      className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md text-red-400"
+                                      onClick={() =>
+                                        handleDeleteComment(comment._id)
+                                      }
+                                    >
+                                      <FaTrash className="mr-2" /> Delete
+                                    </button>
                                   </>
                                 ) : (
-                                  <button
-                                  className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md"
-                                  
-                                >
-                                  <FaFlag className="mr-2" /> Report
-                                </button>
-                                )} 
-                                  
+                                  <button className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md">
+                                    <FaFlag className="mr-2" /> Report
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -746,7 +960,7 @@ const VideoPage = () => {
           {/* Right Section: Suggested Videos */}
           <div className="lg:col-span-1 p-2">
             <h3 className="text-lg font-bold mb-4">Suggested Videos</h3>
-            <RecommendedVideos  currentVideoId={id} />
+            <RecommendedVideos currentVideoId={id} />
           </div>
 
           {/* Modal */}
