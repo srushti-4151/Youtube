@@ -1,5 +1,10 @@
 import { toggleSidebar } from "../redux/slices/Sidebarslice.js";
-import { AiOutlineMenu, AiOutlineSearch, AiOutlineClose } from "react-icons/ai";
+import {
+  AiOutlineMenu,
+  AiOutlineSearch,
+  AiOutlineClose,
+  AiOutlineAudio,
+} from "react-icons/ai";
 import { MdOutlineVideoCall } from "react-icons/md";
 import { FaUserCircle } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,6 +30,11 @@ const Navbar = () => {
   const { user } = useSelector((state) => state.auth);
   // console.log("User:", user);
   const theme = useSelector((state) => state.theme.theme);
+  const recognitionRef = useRef(null);
+
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSearchText, setVoiceSearchText] = useState("");
+  const [voiceSearchResults, setVoiceSearchResults] = useState([]);
 
   const [query, setquery] = useState("");
   const handleSearch = () => {
@@ -52,9 +62,143 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  
+  // Voice Search Functionality
+  // const handleVoiceSearch = () => {
+  //   if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+  //     alert("Your browser does not support voice search.");
+  //     return;
+  //   }
+
+  //   const SpeechRecognition =
+  //     window.SpeechRecognition || window.webkitSpeechRecognition;
+  //   recognitionRef.current = new SpeechRecognition();
+  //   recognitionRef.current.lang = "en-US";
+  //   recognitionRef.current.start();
+
+  //   recognitionRef.current.onresult = (event) => {
+  //     const speechText = event.results[0][0].transcript;
+  //     setquery(speechText);
+  //     handleSearch(); // Trigger search after voice input
+  //   };
+
+  //   recognitionRef.current.onerror = (event) => {
+  //     console.error("Speech recognition error:", event.error);
+  //   };
+  // };
+
+  const handleVoiceSearch = () => {
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+  
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+      alert("Your browser does not support voice search.");
+      return;
+    }
+  
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = true;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = "en-US";
+  
+    recognitionRef.current.onstart = () => {
+      setIsListening(true);
+      setVoiceSearchText("Listening...");
+      setVoiceSearchResults([]);
+    };
+  
+    recognitionRef.current.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0])
+        .map((result) => result.transcript)
+        .join('');
+  
+      setVoiceSearchText(transcript);
+      setquery(transcript); // Update the search query in real-time
+  
+      if (event.results[0].isFinal) {
+        setVoiceSearchResults(prev => [...prev, transcript]);
+        recognitionRef.current.stop();
+        setIsListening(false);
+        
+        // Automatically trigger search after short delay
+        setTimeout(() => {
+          navigate(`/search/${transcript}`);
+        }, 500); // Small delay to ensure UI updates
+      }
+    };
+  
+    recognitionRef.current.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+      setVoiceSearchText("");
+    };
+  
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+    };
+  
+    recognitionRef.current.start();
+  };
 
   return (
     <>
+      {isListening && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center">
+          <div className="w-full max-w-2xl p-6">
+            {/* Microphone animation */}
+            <div className="flex justify-center mb-8">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center voice-pulse">
+                  <AiOutlineAudio size={32} className="text-white" />
+                </div>
+                <div className="absolute inset-0 rounded-full border-4 border-red-600 animate-ping opacity-75"></div>
+              </div>
+            </div>
+
+            {/* Listening text */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Listening...
+              </h1>
+              <p className="text-xl text-gray-300">{voiceSearchText}</p>
+            </div>
+
+            {/* Search results preview (optional) */}
+            {voiceSearchResults.length > 0 && (
+              <div className="bg-gray-900 rounded-lg p-4 max-h-64 overflow-y-auto">
+                <h2 className="text-xl font-semibold text-white mb-4">
+                  Did you mean:
+                </h2>
+                <ul className="space-y-2">
+                  {voiceSearchResults.map((result, index) => (
+                    <li
+                      key={index}
+                      className="text-gray-300 hover:text-white cursor-pointer"
+                    >
+                      {result}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Close button */}
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={handleVoiceSearch}
+                className="px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition"
+              >
+                Stop Listening
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <nav className="h-14 hidden dark:bg-black bg-white md:flex fixed top-0 left-0 w-full items-center justify-between py-1 px-7 z-50">
         {/* Left - Logo & Menu */}
         <div className="flex items-center space-x-4">
@@ -81,6 +225,23 @@ const Navbar = () => {
             className="py-2 px-4 rounded-r-full dark:bg-[#222222] dark:border-gray-600 border border-secondary-marginal-border border-l-0 flex-shrink-0"
           >
             <AiOutlineSearch className="text-xl" />
+          </button>
+          {/* <button
+            onClick={handleVoiceSearch}
+            className="px-2 py-2 ml-2 dark:text-white text-black rounded-full dark:bg-gray-800 dark:hover:bg-gray-700 bg-gray-100 hover:bg-gray-300"
+          >
+            <AiOutlineAudio size={22} />
+          </button> */}
+          <button
+            onClick={handleVoiceSearch}
+            className={`px-2 py-2 ml-2 rounded-full transition-all ${
+              isListening
+                ? "bg-red-600 text-white"
+                : "dark:bg-gray-800 dark:hover:bg-gray-700 bg-gray-100 hover:bg-gray-300 dark:text-white text-black"
+            }`}
+            aria-label={isListening ? "Stop listening" : "Start voice search"}
+          >
+            <AiOutlineAudio size={22} />
           </button>
         </div>
 
@@ -276,7 +437,7 @@ const Navbar = () => {
                 className="flex-grow rounded-l-full border dark:bg-[#121212] dark:border-gray-600 border-secondary-marginal-border py-1 px-4 text-sm focus:border-blue-500 outline-none"
                 value={query} // Make sure this is properly bound
                 onChange={(e) => setquery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()} 
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
               <button
                 onClick={handleSearch}

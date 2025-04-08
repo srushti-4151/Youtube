@@ -81,7 +81,7 @@ export const login = async (userData) => {
     const response = await axios.post(`${API_URL}/login`, userData, {
       withCredentials: true, // Ensures cookies (JWT) are handled properly
     });
-    console.log(response.data);
+    console.log("loginnnnnnnn",response.data);
     return response.data;
   } catch (error) {
     return {

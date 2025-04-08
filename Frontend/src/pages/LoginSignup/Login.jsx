@@ -15,10 +15,8 @@ const Login = () => {
   } = useForm();
 
   const onSubmit = async (data) => {
-    const result = await dispatch(loginUser(data));
-    if (result.payload) {
-      navigate("/"); // Redirect to homepage on success
-    }
+    await dispatch(loginUser(data)).unwrap(); // Ensures proper error handling
+    navigate("/");
   };
 
   return (
@@ -39,7 +37,9 @@ const Login = () => {
             {...register("email", { required: "Email is required" })}
             className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
-          {errors.email && <p className="text-red-500">{errors.email.message}</p>}
+          {errors.email && (
+            <p className="text-red-500">{errors.email.message}</p>
+          )}
         </div>
 
         {/* Password Field */}
@@ -50,7 +50,9 @@ const Login = () => {
             {...register("password", { required: "Password is required" })}
             className="w-full p-1 rounded-lg dark:bg-black bg-white"
           />
-          {errors.password && <p className="text-red-500">{errors.password.message}</p>}
+          {errors.password && (
+            <p className="text-red-500">{errors.password.message}</p>
+          )}
         </div>
 
         {/* Submit Button */}

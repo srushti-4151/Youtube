@@ -48,3 +48,13 @@ body {
   background: #875ec9; /* Dark Mode Thumb Hover */
 }
 
+/* Add to your global CSS */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.voice-pulse {
+  animation: pulse 1.5s infinite;
+}
