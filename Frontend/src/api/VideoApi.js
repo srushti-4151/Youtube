@@ -3,6 +3,17 @@ import { api } from "./AuthApi";
 
 const VIDEO_API_URL = "http://localhost:8000/api/v1/videos";
 
+// Function to search videos
+export const searchVideos = async (query) => {
+  try {
+    const response = await axios.get(`${VIDEO_API_URL}/search?q=${query}`);
+    // console.log("Search result :", response)
+    return response.data;
+  } catch (error) {
+    console.error("Error searching videos:", error);
+    throw error;
+  }
+};
 
 export const uploadNewVideo = async (formData) => {
   try {

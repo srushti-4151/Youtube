@@ -68,7 +68,7 @@ const TweetsSection = () => {
   console.log("likeStatusTweet.......................", likeStatusTweet);
 
   const handleLikeToggle = async (tweetId, type) => {
-    console.log("tweet is in handle", tweetId,type)
+    console.log("tweet is in handle", tweetId, type);
     if (!isAuthenticated) {
       handleSuccess("Please login to like or dislike");
       return;
@@ -200,7 +200,16 @@ const TweetsSection = () => {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <textarea
-              {...register("content")}
+              {...register("content", {
+                minLength: {
+                  value: 300,
+                  message: "Add atleast 300 characters",
+                },
+                maxLength: {
+                  value: 700,
+                  message: "content should not exceed 700 characters",
+                },
+              })}
               className="w-full p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200"
               rows="3"
               placeholder="What's on your mind?"
@@ -301,175 +310,178 @@ const TweetsSection = () => {
               isLiked: false,
               isDisliked: false,
               likesCount: 0,
-              dislikesCount: 0
+              dislikesCount: 0,
             };
             return (
-            <div
-              key={tweet._id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-300 dark:border-gray-600 overflow-hidden transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-700/50"
-            >
-              {/* Tweet Header with User Info */}
-              <div className="p-4 flex items-start space-x-3 border-b border-gray-300 dark:border-gray-700">
-                <img
-                  src={tweet.owner.avatar}
-                  alt={tweet.owner.fullName}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <h4 className="font-medium text-gray-800 dark:text-gray-100">
-                    {tweet.owner.fullName}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    @{tweet.owner.username}
-                  </p>
-                </div>
-                <div className="text-sm pt-1 text-gray-600 dark:text-gray-500">
-                  {new Date(tweet.createdAt).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </div>
-
-              {/* Tweet Content */}
-              <div className="p-5 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/tweet/${tweet._id}`)} 
-              }
+              <div
+                key={tweet._id}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-300 dark:border-gray-600 overflow-hidden transition-all duration-200 hover:shadow-md dark:hover:shadow-gray-700/50"
               >
-                {tweet.content && (
-                  <>
-                    {/* Tweet Content (Editable) */}
-                    {editMode && tweetToEdit === tweet._id ? (
-                      <input
-                        type="text"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-800 dark:text-gray-100 mb-4 whitespace-pre-line">
-                        {tweet.content}
-                      </p>
-                    )}
-                  </>
-                )}
-
-                {/* Tweet Image */}
-                {tweet.post && (
-                  <div className="mb-4 flex justify-center items-center p-2 rounded-lg overflow-hidden">
-                    <img
-                      src={tweet.post}
-                      alt="Tweet"
-                      className="w-96 h-96 object-cover"
-                    />
+                {/* Tweet Header with User Info */}
+                <div className="p-4 flex items-start space-x-3 border-b border-gray-300 dark:border-gray-700">
+                  <img
+                    src={tweet.owner.avatar}
+                    alt={tweet.owner.fullName}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="font-medium text-gray-800 dark:text-gray-100">
+                      {tweet.owner.fullName}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      @{tweet.owner.username}
+                    </p>
                   </div>
-                )}
-                {editMode && tweetToEdit === tweet._id && (
-                  <>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUpdate(tweet._id)}
-                    }
-                    className="m-2 px-3 py-1 text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-all"
-                  >
-                    Save
-                  </button>
-                </>
-                )}
-
-                {/* Tweet Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center space-x-4">
-                    <button
-                    onClick={(e) => {
-                      e.stopPropagation(); 
-                      handleLikeToggle(tweet._id, "like")
-                    }
-                    }
-                      className={`flex items-center space-x-1 transition-colors ${
-                        tweetLikeStatus.isLiked
-                          ? "text-pink-600 dark:text-pink-500"
-                          : "text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-500"
-                      }`}
-                    >
-                      {tweetLikeStatus.isLiked ? (
-                        <FaHeart size={20} />
-                      ) : (
-                        <FiHeart size={20} />
-                      )}
-                      <span className="text-sm">{tweetLikeStatus.likesCount}</span>
-                    </button>
-
-                    <button
-                    onClick={(e) =>{
-                      e.stopPropagation(); 
-                      handleLikeToggle(tweet._id, "dislike")
-                    }
-                    }
-                      className={`flex items-center space-x-1 transition-colors ${
-                        tweetLikeStatus.isDisliked
-                          ? "text-pink-600 dark:text-pink-500"
-                          : "text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-500"
-                      }`}
-                    >
-                      {tweetLikeStatus.isDisliked ? (
-                        <IoHeartDislikeSharp size={20} />
-                      ) : (
-                        <IoHeartDislikeOutline size={20} />
-                      )}
-                      <span className="text-sm">{tweetLikeStatus.dislikesCount}</span>
-                    </button>
-
-                    <button 
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       navigate(`/tweet/${tweet._id}`)} 
-                     }
-                    className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
-                      <FiMessageCircle size={20} />
-                    </button>
+                  <div className="text-sm pt-1 text-gray-600 dark:text-gray-500">
+                    {new Date(tweet.createdAt).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </div>
+                </div>
 
-                  <div className="flex items-center space-x-2">
-                    {isProfileOwner && (
-                      <div className="flex space-x-1">
-                        <button
+                {/* Tweet Content */}
+                <div
+                  className="p-5 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/tweet/${tweet._id}`);
+                  }}
+                >
+                  {tweet.content && (
+                    <>
+                      {/* Tweet Content (Editable) */}
+                      {editMode && tweetToEdit === tweet._id ? (
+                        <input
+                          type="text"
+                          value={content}
+                          onChange={(e) => setContent(e.target.value)}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setEditMode(true);
-                            setTweetToEdit(tweet._id);
-                            setContent(tweet.content);
                           }}
-                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-green-500 dark:hover:text-green-400 rounded-full hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <FiEdit size={20} />
-                        </button>
-                        <button
-                          onClick={(e) => 
-                          {
-                            e.stopPropagation();
-                            handleDelete(tweet._id)}
-                          }
-                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <FiTrash2 size={20} />
-                        </button>
-                      </div>
-                    )}
+                          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <p className="text-gray-800 dark:text-gray-100 mb-4 whitespace-pre-line">
+                          {tweet.content}
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {/* Tweet Image */}
+                  {tweet.post && (
+                    <div className="mb-4 flex justify-center items-center p-2 rounded-lg overflow-hidden">
+                      <img
+                        src={tweet.post}
+                        alt="Tweet"
+                        className="w-96 h-96 object-cover"
+                      />
+                    </div>
+                  )}
+                  {editMode && tweetToEdit === tweet._id && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUpdate(tweet._id);
+                        }}
+                        className="m-2 px-3 py-1 text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-all"
+                      >
+                        Save
+                      </button>
+                    </>
+                  )}
+
+                  {/* Tweet Actions */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center space-x-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLikeToggle(tweet._id, "like");
+                        }}
+                        className={`flex items-center space-x-1 transition-colors ${
+                          tweetLikeStatus.isLiked
+                            ? "text-pink-600 dark:text-pink-500"
+                            : "text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-500"
+                        }`}
+                      >
+                        {tweetLikeStatus.isLiked ? (
+                          <FaHeart size={20} />
+                        ) : (
+                          <FiHeart size={20} />
+                        )}
+                        <span className="text-sm">
+                          {tweetLikeStatus.likesCount}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLikeToggle(tweet._id, "dislike");
+                        }}
+                        className={`flex items-center space-x-1 transition-colors ${
+                          tweetLikeStatus.isDisliked
+                            ? "text-pink-600 dark:text-pink-500"
+                            : "text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-500"
+                        }`}
+                      >
+                        {tweetLikeStatus.isDisliked ? (
+                          <IoHeartDislikeSharp size={20} />
+                        ) : (
+                          <IoHeartDislikeOutline size={20} />
+                        )}
+                        <span className="text-sm">
+                          {tweetLikeStatus.dislikesCount}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/tweet/${tweet._id}`);
+                        }}
+                        className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                      >
+                        <FiMessageCircle size={20} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      {isProfileOwner && (
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditMode(true);
+                              setTweetToEdit(tweet._id);
+                              setContent(tweet.content);
+                            }}
+                            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-green-500 dark:hover:text-green-400 rounded-full hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <FiEdit size={20} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(tweet._id);
+                            }}
+                            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <FiTrash2 size={20} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        ) 
+            );
+          })
         )}
       </div>
     </div>

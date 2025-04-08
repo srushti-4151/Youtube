@@ -10,6 +10,182 @@ import {
 } from "../utils/Cloudinary.js";
 import { VideoView } from "../models/videoView.model.js";
 
+// const searchVideos = asyncHandler(async (req, res) => {
+//   const query = req.query.q; // Get search query from frontend
+
+//   if (!query) {
+//     return res.status(400).json({ message: "Search query is required" });
+//   }
+
+//   try {
+//     const results = await Video.aggregate([
+//       {
+//         $search: {
+//           index: "default", // Use the Atlas Search index name
+//           compound: {
+//             should: [
+//               {
+//                 text: {
+//                   query: query,
+//                   path: ["title", "description"], // Search in these fields
+//                   fuzzy: { maxEdits: 2 } // Typo tolerance
+//                 }
+//               },
+//               {
+//                 text: {
+//                   query: query,
+//                   path: ["title", "description"],
+//                   score: { boost: { value: 5 } } // Boosting relevance
+//                 }
+//               }
+//             ]
+//           }
+//         }
+//       },
+//       { $limit: 10 } // Limit results to improve performance
+//     ]);
+
+//     return res.status(200).json(new ApiResponse(200, results, "Search results fetched successfully!"));
+//   } catch (err) {
+//     console.error("Search Error:", err);
+//     return res.status(500).json(new ApiError(500, "Something went wrong while searching"));
+//   }
+// });
+
+const searchVideos = asyncHandler(async (req, res) => {
+  const query = req.query.q; // Get search query from frontend
+
+  if (!query) {
+    return res.status(400).json({ message: "Search query is required" });
+  }
+
+  try {
+    // 🔹 Search Videos
+    const videos = await Video.aggregate([
+      {
+        $search: {
+          index: "default",
+          compound: {
+            should: [
+              {
+                text: {
+                  query: query,
+                  path: ["title", "description"],
+                  fuzzy: { maxEdits: 2 }
+                }
+              },
+              {
+                text: {
+                  query: query,
+                  path: ["title", "description"],
+                  score: { boost: { value: 5 } }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "users", // Target collection
+          localField: "owner", // Field in "videos" collection
+          foreignField: "_id", // Field in "users" collection
+          as: "owner", // Output field
+          pipeline: [
+            {
+              $project: {
+                // Select only necessary fields
+                username: 1,
+                fullName: 1,
+                avatar: 1,
+              },
+            },
+          ],
+        },
+      },
+      { $unwind: "$owner" }, //ensures that each video has exactly one owner object.
+      {
+        $lookup: {
+          from: "videoviews", // Count views from VideoView model
+          localField: "_id",
+          foreignField: "video",
+          as: "views",
+        },
+      },
+      // Add a view count field
+      {
+        $addFields: {
+          views: { $size: "$views" },
+        },
+      },
+      {
+        $unwind: "$owner", // Convert owner array to object
+      },
+    ]);
+
+    // 🔹 Search Channels with Required Fields
+    const channels = await User.aggregate([
+      {
+        $match: {
+          fullName: { $regex: query, $options: "i" } // Case-insensitive search
+        }
+      },
+      {
+        $lookup: {
+          from: "subscriptions", // Subscription collection
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers"
+        }
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo"
+        }
+      },
+      {
+        $lookup: {
+          from: "videos", // Video collection
+          localField: "_id",
+          foreignField: "owner", // The field in 'videos' that references 'User' (_id)
+          as: "videos"
+        }
+      },
+      {
+        $addFields: {
+          subscribersCount: { $size: "$subscribers" },
+          channelsSubscribedToCount: { $size: "$subscribedTo" },
+          totalVideos: { $size: "$videos" }
+        }
+      },
+      {
+        $project: {
+          fullName: 1,
+          username: 1,
+          subscribersCount: 1,
+          channelsSubscribedToCount: 1,
+          avatar: 1,
+          coverImage: 1,
+          totalVideos: 1,
+          email: 1
+        }
+      },
+      { $limit: 5 } // Limit results for performance
+    ]);
+
+    // 🔹 Return structured response
+    return res.status(200).json(
+      new ApiResponse(200, { videos, channels }, "Search results fetched successfully!")
+    );
+  } catch (err) {
+    console.error("Search Error:", err);
+    return res.status(500).json(new ApiError(500, "Something went wrong while searching"));
+  }
+});
+
 //videos uploaded by a specific user (uploaded by that user)
 const getAllVideosById = asyncHandler(async (req, res) => {
   //🚀 Steps:
@@ -161,7 +337,7 @@ const getAllVideosOfUser = asyncHandler(async (req, res) => {
     userId,
   } = req.query;
   //   console.log("req.query.userId",req.query.userId)
-  console.log("Received userId in of user:", req.query.userId);
+  // console.log("Received userId in of user:", req.query.userId);
 
   // Validate pagination params
   if (page < 1 || limit < 1) {
@@ -372,7 +548,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
   //TODO: get video by id
   const { videoId } = req.params;
-  console.log("Video ID:", videoId);
+  // console.log("Video ID:", videoId);
 
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
     throw new ApiError(400, "Video id is required!!!!");
@@ -809,5 +985,6 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
-  getAllVideosOfUser
+  getAllVideosOfUser,
+  searchVideos
 };

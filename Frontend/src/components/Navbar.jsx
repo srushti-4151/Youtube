@@ -12,16 +12,27 @@ import { handleSuccess } from "../utils/toast.js";
 import { AiOutlineUser } from "react-icons/ai";
 import { MdDarkMode, MdOutlineLightMode } from "react-icons/md";
 import { toggleTheme } from "../redux/slices/ThemeSlice.js";
+import { fetchSearchResults, setQuery } from "../redux/slices/searchSlice.js";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const mobileSearchRef = useRef(null);
   const dropdownRef = useRef(null);
   const { user } = useSelector((state) => state.auth);
   // console.log("User:", user);
   const theme = useSelector((state) => state.theme.theme);
+
+  const [query, setquery] = useState("");
+  const handleSearch = () => {
+    if (query.trim()) {
+      navigate(`/search/${query}`); // Navigate to search results page
+    }
+    // dispatch(fetchSearchResults(query)); // Directly call fetchSearchResults
+  };
 
   const handleLogout = () => {
     console.log("Before dispatching logout");
@@ -62,24 +73,19 @@ const Navbar = () => {
             aria-label="Search"
             className="rounded-l-full border dark:bg-[#121212] dark:shadow-none dark:border-gray-600 dark:focus:border-blue-500 border-secondary-marginal-border shadow-inner shadow-secondary-marginal
              py-1 px-4 text-lg w-full focus:border-blue-500 outline-none"
+            onChange={(e) => setquery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()} // Search on Enter
           />
-          <button className="py-2 px-4 rounded-r-full dark:bg-[#222222] dark:border-gray-600 border border-secondary-marginal-border border-l-0 flex-shrink-0">
+          <button
+            onClick={handleSearch}
+            className="py-2 px-4 rounded-r-full dark:bg-[#222222] dark:border-gray-600 border border-secondary-marginal-border border-l-0 flex-shrink-0"
+          >
             <AiOutlineSearch className="text-xl" />
           </button>
         </div>
 
         {/* Right - Icons */}
         <div className="hidden relative md:flex items-center gap-4  transition-all duration-300">
-          {/* <button
-            onClick={() => dispatch(toggleTheme())}
-            className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full"
-          >
-            {theme === "light" ? (
-              <MdDarkMode size={20} />
-            ) : (
-              <MdOutlineLightMode size={20} />
-            )}
-          </button> */}
           <button
             onClick={() => dispatch(toggleTheme())}
             className={`
@@ -122,111 +128,7 @@ const Navbar = () => {
                     `}
               />
             </div>
-
-            {/* Optional animated background circle (uncomment if needed) */}
-            {/* <span className="absolute inset-0 rounded-full bg-[#ae7aff] opacity-0 group-hover:opacity-10 transition-opacity duration-300 -z-10" /> */}
           </button>
-          {/* {user ? (
-            <div
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              ref={dropdownRef}
-              className="cursor-pointer"
-            >
-              {user ? (
-                <img
-                  src={user.avatar}
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full"
-                />
-              ) : (
-                <FaUserCircle className="text-3xl" />
-              )}
-              {isDropdownOpen && (
-                <div
-                  className={`absolute top-10 z-50 right-0 mt-2 w-56 dark:bg-gray-800 bg-white shadow-lg rounded-md py-2 border border-gray-900 transition-all duration-300 ease-out transform ${
-                    isDropdownOpen
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-[-10px] pointer-events-none"
-                  }`}
-                >
-                  <div className="flex items-center space-x-2 px-4 py-2">
-                    <Link to={`/profile/${user.username}`}>
-                      <img
-                        src={user.avatar || "https://via.placeholder.com/40"}
-                        alt="User Avatar"
-                        className="w-10 h-10 rounded-full"
-                      />
-                    </Link>
-                    <div>
-                      <p className="font-semibold">{user.username}</p>
-                      <p className="text-gray-400">@{user.username}</p>
-                    </div>
-                  </div>
-                  <hr className="border-gray-600" />
-                  <button className="block w-full text-left px-4 py-2 dark:hover:bg-gray-700 hover:bg-gray-200">
-                    Settings
-                  </button>
-                  <button className="block w-full text-left px-4 py-2 dark:hover:bg-gray-700 hover:bg-gray-200">
-                    Keyboard Shortcuts
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-red-500 dark:hover:bg-gray-700 hover:bg-gray-200"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <NavLink
-                to="/login"
-                className={({ isActive }) => `
-                  relative py-1.5 px-6 rounded-full font-medium 
-                  dark:text-white text-black bg-transparent hover:text-white
-                  border-2 border-[#ae7aff] hover:bg-gradient-to-r hover:from-[#9161df] hover:to-[#6e3dff]
-                  transition-all duration-300 ease-out
-                  overflow-hidden group
-                  shadow-lg hover:shadow-[0_4px_15px_rgba(174,122,255,0.4)]
-                  transform hover:-translate-y-0.5
-                  ${
-                    isActive
-                      ? "bg-gradient-to-r from-[#ae7aff] to-[#8a4fff] border-transparent shadow-lg hover:shadow-[0_4px_15px_rgba(174,122,255,0.4)]"
-                      : "bg-transparent border-[#ae7aff]"
-                  }
-                `}
-              >
-                <span className="relative z-10">Login</span>
-                <span
-                  className="absolute inset-0 bg-[#ae7aff] opacity-0 
-                    group-hover:opacity-100 transition-opacity duration-300
-                    -z-0 rounded-full scale-0 group-hover:scale-100 
-                    origin-center"
-                />
-              </NavLink>
-
-              <NavLink
-                to="/signup"
-                className={`
-                  relative py-1.5 px-6 rounded-full font-medium
-                  text-white bg-gradient-to-r from-[#ae7aff] to-[#8a4fff]
-                  hover:from-[#9161df] hover:to-[#6e3dff]
-                  shadow-lg hover:shadow-[0_4px_15px_rgba(174,122,255,0.4)]
-                  transition-all duration-300 ease-out
-                  transform hover:-translate-y-0.5
-                  border-2 border-transparent
-                `}
-              >
-                <span className="relative z-10">Signup</span>
-                <span
-                  className="absolute inset-0 bg-white opacity-0 
-                    hover:opacity-10 transition-opacity duration-300
-                    rounded-full"
-                />
-              </NavLink>
-            </>
-          )} */}
           {user ? (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -356,13 +258,44 @@ const Navbar = () => {
 
         {/* Right - */}
         <div className="flex gap-3">
-          {/* Search Bar */}
-          <div className="flex items-center justify-end">
-            <button className="dark:bg-black bg-white px-2 py-1 rounded-r-full">
-              <AiOutlineSearch className="text-xl" />
-            </button>
-          </div>
-
+          {showMobileSearch ? (
+            <div
+              ref={mobileSearchRef}
+              className="absolute left-0 top-14 w-full dark:bg-black bg-white px-4 py-2 flex items-center border-b dark:border-gray-700"
+            >
+              <button
+                onClick={() => setShowMobileSearch(false)}
+                className="mr-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                <AiOutlineClose />
+              </button>
+              <input
+                type="text" // Changed from "search" to "text" for better mobile compatibility
+                placeholder="Search"
+                aria-label="Search"
+                className="flex-grow rounded-l-full border dark:bg-[#121212] dark:border-gray-600 border-secondary-marginal-border py-1 px-4 text-sm focus:border-blue-500 outline-none"
+                value={query} // Make sure this is properly bound
+                onChange={(e) => setquery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()} 
+              />
+              <button
+                onClick={handleSearch}
+                className="py-1 px-3 rounded-r-full dark:bg-[#222222] dark:border-gray-600 border border-secondary-marginal-border border-l-0"
+              >
+                <AiOutlineSearch className="text-lg" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              {/* Search Icon */}
+              <button
+                onClick={() => setShowMobileSearch(true)}
+                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                <AiOutlineSearch className="text-xl" />
+              </button>
+            </div>
+          )}
           <button
             onClick={() => dispatch(toggleTheme())}
             className={`

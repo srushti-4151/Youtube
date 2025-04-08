@@ -26,6 +26,7 @@ import Login from "./pages/LoginSignup/Login";
 import Signup from "./pages/LoginSignup/Signup";
 import PlayListPage from "./pages/PlaylistPage/PlayListPage";
 import Tweetpage from "./pages/TweetPage/Tweetpage";
+import SearchResults from "./pages/Search/SearchResults";
 
 function App() {
   const dispatch = useDispatch();
@@ -73,6 +74,7 @@ function App() {
               <Route path="/watchlater" element={<WatchLater />} />
               <Route path="playlists" element={<PlaylistSection />} />
               <Route path="/playlist/:playlistId" element={<PlayListPage />} />
+              <Route path="/search/:query" element={<SearchResults />} />
               <Route path="/tweet/:tweetId" element={<Tweetpage />} />
 
               <Route path="/profile/:username" element={<ProfileLayout />}>

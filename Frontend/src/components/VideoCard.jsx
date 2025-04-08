@@ -369,7 +369,7 @@ const VideoCard = ({ video }) => {
                   id="description"
                   {...register("description", {
                     maxLength: {
-                      value: 500,
+                      value: 1000,
                       message: "Description should not exceed 500 characters",
                     },
                   })}

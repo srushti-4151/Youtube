@@ -11,6 +11,7 @@ import viewsReducer from "../slices/ViewSlice.js"
 import watchLaterReducer from "../slices/watchLaterSlice.js";
 import tweetsReducer from "../slices/TweetSlice.js"
 import tweetcommentsReducer from "../slices/TweetCommentSlice.js"
+import searchReducer from "../slices/searchSlice.js"
 
 export const store = configureStore({
     reducer: {
@@ -26,5 +27,6 @@ export const store = configureStore({
         watchLater : watchLaterReducer,
         tweets : tweetsReducer,
         tweetcomments : tweetcommentsReducer,
+        search: searchReducer,
     }
 })

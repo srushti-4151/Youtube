@@ -15,6 +15,11 @@ const tweetcommentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    parentComment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TweetComment",
+      default: null,
+    }
   },
   { timestamps: true }
 );

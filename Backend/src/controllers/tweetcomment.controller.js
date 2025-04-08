@@ -23,11 +23,16 @@ const getTweetComments = asyncHandler(async (req, res) => {
   }
 
   const totalComments = await TweetComment.countDocuments({
-    tweet: new mongoose.Types.ObjectId(tweetId),
-  });
+      tweet: new mongoose.Types.ObjectId(tweetId),
+      parentComment: null, // Only count main comments
+    });
 
   const comments = await TweetComment.aggregate([
-    { $match: { tweet: new mongoose.Types.ObjectId(tweetId) } }, 
+    { $match: { 
+      tweet: new mongoose.Types.ObjectId(tweetId),
+      parentComment: null
+    } 
+    }, 
     { $sort: { createdAt: -1 } },
     { $skip: (parseInt(page) - 1) * parseInt(limit) },
     { $limit: parseInt(limit) },
@@ -57,6 +62,38 @@ const getTweetComments = asyncHandler(async (req, res) => {
           },
         ],
       },
+    },
+    {
+      $lookup: {
+        from: "tweetcomments",
+        localField: "_id",
+        foreignField: "parentComment",
+        as: "replies",
+        pipeline: [
+          { $sort: { createdAt: 1 } }, // Sort replies (oldest first)
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                { $project: { username: 1, fullName: 1, avatar: 1 } },
+              ],
+            },
+          },
+          { 
+            $addFields: { owner: { $arrayElemAt: ["$owner", 0] } } 
+          },
+          {
+            $project: {
+              content: 1,
+              createdAt: 1,
+              owner: 1,
+            },
+          },
+        ],
+      }
     },
     {
       $addFields: {
@@ -102,6 +139,7 @@ const getTweetComments = asyncHandler(async (req, res) => {
         createdAt: 1,
         likesCount: 1,
         isLiked: 1,
+        replies: 1, 
       },
     },
   ]);
@@ -125,7 +163,7 @@ const getTweetComments = asyncHandler(async (req, res) => {
 const addTweetComment = asyncHandler(async (req, res) => {
   // TODO: add a comment to a tweet
   const { tweetId } = req.params;
-  const { content } = req.body;
+  const { content, parentComment } = req.body;
 
   if (!tweetId) {
     throw new ApiError(400, "tweet ID is required.");
@@ -134,20 +172,25 @@ const addTweetComment = asyncHandler(async (req, res) => {
   if (!isValidObjectId(tweetId)) {
     throw new ApiError(400, "Invalid tweet ID");
   }
+  if (!content?.trim()) throw new ApiError(400, "Content is required");
+
+  // Check if the parent comment exists if it's a reply
+    if (parentComment) {
+      if (!isValidObjectId(parentComment)) throw new ApiError(400, "Invalid Parent Comment ID");
+      const parentExists = await TweetComment.findById(parentComment);
+      if (!parentExists) throw new ApiError(404, "Parent comment not found");
+    }
 
   const tweet = await Tweet.findById(tweetId);
   if (!tweet) {
     throw new ApiError(404, "tweet not found");
   }
 
-  if (!content?.trim()) {
-    throw new ApiError(400, "Content is required");
-  }
-
   const comment = await TweetComment.create({
     content,
     tweet: new mongoose.Types.ObjectId(tweetId),
     owner: req.user._id,
+    parentComment: parentComment || null,
   });
   return res
     .status(201)
@@ -177,8 +220,8 @@ const updateTweetComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Content is required");
   }
 
-  console.log("req.user._id.toString()",req.user._id.toString())
-  console.log("tcomment.owner.toString()",tcomment.owner.toString())
+  // console.log("req.user._id.toString()",req.user._id.toString())
+  // console.log("tcomment.owner.toString()",tcomment.owner.toString())
   if (tcomment.owner.toString() !== req.user._id.toString()) {
     throw new ApiError(403, "You are not autorized to update this tcomment");
   }
@@ -216,6 +259,11 @@ const deleteTweetComment = asyncHandler(async (req, res) => {
   if (tcomment.owner.toString() !== req.user._id.toString()) {
     throw new ApiError(403, "You are not authorized to delete this tcomment");
   }
+
+  if (tcomment.parentComment === null) {
+      // If it's a main comment, delete all replies too
+      await TweetComment.deleteMany({ parentComment: tweetId });
+    }
 
   await TweetComment.findByIdAndDelete(tweetId);
 

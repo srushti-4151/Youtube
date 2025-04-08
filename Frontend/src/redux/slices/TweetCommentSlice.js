@@ -18,11 +18,20 @@ export const fetchTweetComments = createAsyncThunk(
 
 export const createTweetComment = createAsyncThunk(
   "comments/createTweetComment",
-  async ({ tweetId, commentData }, thunkAPI) => {
-    const response = await addTweetComment(tweetId, commentData);
-    if (!response.success) return thunkAPI.rejectWithValue(response.message);
-    return response.data;
-  }
+  // async ({ tweetId, commentData }, thunkAPI) => {
+  //   const response = await addTweetComment(tweetId, commentData);
+  //   if (!response.success) return thunkAPI.rejectWithValue(response.message);
+  //   return response.data;
+  // }
+  async ({ tweetId, content, parentComment = null }, thunkAPI) => {
+      const commentData = { content };
+      if (parentComment) {
+        commentData.parentComment = parentComment; // Only add if it's a reply
+      }
+      const response = await addTweetComment(tweetId, commentData);
+      if (!response.success) return thunkAPI.rejectWithValue(response.message);
+      return response.data;
+    }
 );
 
 export const editTweetComment = createAsyncThunk(

@@ -35,6 +35,7 @@ import {
 } from "../../redux/slices/Likeslice.js";
 import RecommendedVideos from "../../components/RecommendedVideos.jsx";
 import { countView } from "../../api/viewsApi.js";
+import VideoPlayer from "../../components/VideoPlayer.jsx";
 
 // import { addHistory } from "../../redux/slices/ViewSlice.js";
 
@@ -85,7 +86,7 @@ const VideoPage = () => {
   );
   const { userChannelProfile } = useSelector((state) => state.auth);
   // console.log("commets", comments);
-  // console.log("selectedVideo", selectedVideo);
+  console.log("selectedVideo", selectedVideo);
   // console.log("userChannelProfile", userChannelProfile);
 
   // Fetch comments when the video loads
@@ -220,7 +221,7 @@ const VideoPage = () => {
 
   const { likeStatus, likeStatusComments } = useSelector((state) => state.like);
   // console.log("likeStatus.......................", likeStatus);
-  console.log("likeStatusComments.......................", likeStatusComments);
+  // console.log("likeStatusComments.......................", likeStatusComments);
 
   useEffect(() => {
     dispatch(getVideoLikesStatusapi(id));
@@ -328,6 +329,8 @@ const VideoPage = () => {
   //     console.error("Failed to add comment:", error);
   //   }
   // };
+//   const videoUrl = selectedVideo?.videoFile.replace("/upload/", "/upload/f_auto,q_auto/").replace(".mp4", ".m3u8");
+//  console.log ("===================", videoUrl)
 
   if (isLoading) {
     return (
@@ -356,12 +359,13 @@ const VideoPage = () => {
             <div className="w-full h-64 lg:h-auto rounded-lg overflow-hidden">
               {selectedVideo ? (
                 <div className="relative">
-                  <video
+                  {/* <video
                     src={selectedVideo?.videoFile}
                     controls
                     autoPlay
                     className="w-full rounded-lg dark:shadow-custom dark:shadow-neutral-900 aspect-video"
-                  ></video>
+                  ></video> */}
+                  <VideoPlayer videoUrl={selectedVideo?.videoFile.replace(".mp4", ".m3u8")} />
                 </div>
               ) : (
                 <div className="h-64 lg:h-auto bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
@@ -808,7 +812,7 @@ const VideoPage = () => {
                               <div className="mt-2">
                                 {comment.replies.map((reply) => (
                                   <div
-                                    key={`reply._id`}
+                                    key={reply._id}
                                     className="flex gap-3 mt-4"
                                   >
                                     <img
@@ -816,7 +820,7 @@ const VideoPage = () => {
                                       alt="Avatar"
                                       className="w-8 h-8 rounded-full"
                                     />
-                                    <div>
+                                    <div className="flex-1">
                                       <p>
                                         <span className="text-[16px] dark:text-gray-200 text-gray-800">
                                           @{reply.owner.username}
@@ -833,7 +837,7 @@ const VideoPage = () => {
                                             onChange={(e) =>
                                               setEditedComment(e.target.value)
                                             }
-                                            className="w-full bg-transparent dark:text-white text-black border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 pr-12 resize-none overflow-hidden"
+                                            className="w-full bg-transparent dark:text-white text-black border-b-2 focus:border-b-2 focus:border-gray-100 focus:outline-none pb-1 resize-none overflow-hidden"
                                             // rows="auto"
                                             // autoFocus
                                           />
@@ -889,6 +893,64 @@ const VideoPage = () => {
                                           )}
                                         </p>
                                       )}
+                                    </div>
+                                    {/* Add this dropdown menu for replies - same as comments */}
+                                    <div className="relative">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenMenuIndex(
+                                            openMenuIndex === reply._id
+                                              ? null
+                                              : reply._id
+                                          );
+                                        }}
+                                        className="rounded-full"
+                                      >
+                                        <BsThreeDotsVertical />
+                                      </button>
+                                      <div className="relative"> 
+
+                                      {openMenuIndex === reply._id && (
+                                        <div
+                                          ref={menuRef}
+                                          className="absolute right-0 mt-2 w-28 dark:text-white text-black shadow-lg rounded-lg p-2 z-10"
+                                        >
+                                          {isAuthenticated &&
+                                          reply.owner._id === user?._id ? (
+                                            <>
+                                              <button
+                                                className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md"
+                                                onClick={() => {
+                                                  setEditingCommentId(
+                                                    reply._id
+                                                  );
+                                                  setEditedComment(
+                                                    reply.content
+                                                  );
+                                                  setOpenMenuIndex(null);
+                                                }}
+                                              >
+                                                <FaEdit className="mr-2" /> Edit
+                                              </button>
+                                              <button
+                                                className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md text-red-400"
+                                                onClick={() =>
+                                                  handleDeleteComment(reply._id)
+                                                }
+                                              >
+                                                <FaTrash className="mr-2" />{" "}
+                                                Delete
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <button className="flex items-center w-full text-left px-2 py-2 dark:hover:bg-gray-800 hover:bg-gray-300 rounded-md">
+                                              <FaFlag className="mr-2" /> Report
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                      </div>
                                     </div>
                                   </div>
                                 ))}

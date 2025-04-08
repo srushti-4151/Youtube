@@ -34,6 +34,9 @@ import {
 import { BsDot } from "react-icons/bs";
 import { FiMoreVertical } from "react-icons/fi";
 import { FaFlag } from "react-icons/fa";
+// Add these imports at the top of your file with other icon imports
+import { FaReply } from "react-icons/fa";
+import { FaAngleDown } from "react-icons/fa";
 
 const Tweetpage = () => {
   const { tweetId } = useParams();
@@ -43,6 +46,9 @@ const Tweetpage = () => {
   const { comments, ComisLoading: commentsLoading } = useSelector(
     (state) => state.tweetcomments
   );
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [visibleReplies, setVisibleReplies] = useState({});
 
   // React Hook Form setup
   const {
@@ -85,7 +91,7 @@ const Tweetpage = () => {
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
       handleSuccess("please loggin to comment !");
-      return 
+      return;
     }
 
     if (!data.content.trim()) return;
@@ -94,19 +100,54 @@ const Tweetpage = () => {
       const result = await dispatch(
         createTweetComment({
           tweetId,
-          commentData: { content: data.content },
+          content: data.content.trim(), // Changed from commentData to content
         })
       ).unwrap();
 
       if (result) {
         handleSuccess("Comment added successfully!");
         reset();
-        // Refresh comments
         dispatch(fetchTweetComments(tweetId));
       }
     } catch (error) {
       handleError(error.message || "Failed to add comment");
     }
+  };
+  // Add this handler function
+  const handleAddReply = async (parentCommentId) => {
+    if (!isAuthenticated) {
+      handleSuccess("Please login to reply");
+      return;
+    }
+
+    if (!replyText.trim()) return;
+
+    try {
+      const result = await dispatch(
+        createTweetComment({
+          tweetId,
+          content: replyText.trim(),
+          parentComment: parentCommentId, // This is the key change
+        })
+      ).unwrap();
+
+      if (result) {
+        handleSuccess("Reply added successfully!");
+        setReplyText("");
+        setReplyingTo(null);
+        dispatch(fetchTweetComments(tweetId));
+      }
+    } catch (error) {
+      handleError(error.message || "Failed to add reply");
+    }
+  };
+
+  // Add this toggle function
+  const toggleReplies = (commentId) => {
+    setVisibleReplies((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
   };
 
   const handleLikeToggle = async (tweetComId, type) => {
@@ -162,17 +203,17 @@ const Tweetpage = () => {
       handleError("Comment cannot be empty");
       return;
     }
-  
+
     try {
       await dispatch(
         editTweetComment({
-          tweetId: commentId, 
+          tweetId: commentId,
           updatedData: {
             content: editContent,
           },
         })
       ).unwrap();
-  
+
       handleSuccess("Comment updated successfully");
       setEditingComment(null);
       dispatch(fetchTweetComments(tweetId));
@@ -196,22 +237,22 @@ const Tweetpage = () => {
     setEditContent("");
   };
 
- useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(event.target) &&
-      !event.target.closest(".dropdown-button") // Prevents closing when clicking the button
-    ) {
-      setOpenDropdownId(null);
-    }
-  };
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        !event.target.closest(".dropdown-button") // Prevents closing when clicking the button
+      ) {
+        setOpenDropdownId(null);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   if (tweetLoading) {
     return (
@@ -422,9 +463,6 @@ const Tweetpage = () => {
                           {new Date(comment.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      {/* <p className="mt-1 text-gray-800 dark:text-gray-200 break-words">
-                        {comment.content}
-                      </p> */}
                       {editingComment === comment._id ? (
                         <div className="mt-2">
                           <textarea
@@ -493,7 +531,254 @@ const Tweetpage = () => {
                             {likeStatus?.dislikesCount || 0}
                           </span>
                         </button>
+                        <button
+                          onClick={() =>
+                            setReplyingTo(
+                              replyingTo === comment._id ? null : comment._id
+                            )
+                          }
+                          className="flex items-center space-x-1 px-1.5 py-1 text-gray-500 hover:text-blue-500 dark:hover:text-blue-400"
+                        >
+                          <FaReply className="text-sm" />
+                          <span className="text-xs font-medium">Reply</span>
+                        </button>
                       </div>
+                      {/* Reply input section */}
+                      {replyingTo === comment._id && (
+                        <div className="mt-3 ml-12">
+                          <div className="flex items-start space-x-3">
+                            <img
+                              src={user?.avatar}
+                              alt={user?.fullName}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                            <div className="flex-1">
+                              <textarea
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder="Write a reply..."
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                                rows="2"
+                                autoFocus
+                              />
+                              <div className="flex justify-end space-x-2 mt-2">
+                                <button
+                                  onClick={() => {
+                                    setReplyingTo(null);
+                                    setReplyText("");
+                                  }}
+                                  className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => handleAddReply(comment._id)}
+                                  disabled={!replyText.trim()}
+                                  className="px-3 py-1 text-sm text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-blue-400"
+                                >
+                                  Reply
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Replies section */}
+                      {comment.replies?.length > 0 && (
+                        <div className="mt-2 ml-12">
+                          <button
+                            onClick={() => toggleReplies(comment._id)}
+                            className="flex items-center text-blue-500 text-sm"
+                          >
+                            <FaAngleDown
+                              className={`mr-1 transition-transform ${
+                                visibleReplies[comment._id] ? "rotate-180" : ""
+                              }`}
+                            />
+                            {comment.replies.length}{" "}
+                            {comment.replies.length === 1 ? "Reply" : "Replies"}
+                          </button>
+
+                          {visibleReplies[comment._id] && (
+                            <div className="mt-2 space-y-3">
+                              {comment.replies.map((reply) => {
+                                const replyLikeStatus =
+                                  likeStatusTweetComments[reply._id] || {};
+                                const isReplyOwner =
+                                  reply.owner?._id === user?._id;
+
+                                return (
+                                  <div
+                                    key={reply._id}
+                                    className="flex space-x-3 group relative"
+                                  >
+                                    <img
+                                      src={reply.owner?.avatar}
+                                      alt={reply.owner?.fullName}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="flex items-center">
+                                        <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                                          {reply.owner?.fullName}
+                                        </span>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                          @{reply.owner?.username}
+                                        </span>
+                                      </div>
+
+                                      {editingComment === reply._id ? (
+                                        <div className="mt-1">
+                                          <textarea
+                                            value={editContent}
+                                            onChange={(e) =>
+                                              setEditContent(e.target.value)
+                                            }
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                                            rows="2"
+                                          />
+                                          <div className="flex justify-end space-x-2 mt-2">
+                                            <button
+                                              onClick={cancelEdit}
+                                              className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
+                                            >
+                                              Cancel
+                                            </button>
+                                            <button
+                                              onClick={() =>
+                                                handleUpdateComment(reply._id)
+                                              }
+                                              className="px-3 py-1 text-sm text-white bg-blue-500 rounded-md hover:bg-blue-600"
+                                            >
+                                              Update
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
+                                          {reply.content}
+                                        </p>
+                                      )}
+
+                                      {/* Reply actions */}
+                                      <div className="mt-1 flex items-center space-x-2">
+                                        {/* <button
+                                          onClick={() =>
+                                            handleLikeToggle(reply._id, "like")
+                                          }
+                                          className={`flex items-center space-x-1 px-1.5 py-1 rounded-full transition-colors duration-200 ${
+                                            replyLikeStatus?.isLiked
+                                              ? "text-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                                              : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                          }`}
+                                        >
+                                          {replyLikeStatus?.isLiked ? (
+                                            <FaThumbsUp className="text-xs" />
+                                          ) : (
+                                            <FaRegThumbsUp className="text-xs" />
+                                          )}
+                                          <span className="text-xs font-medium">
+                                            {replyLikeStatus?.likesCount || 0}
+                                          </span>
+                                        </button>
+
+                                        <button
+                                          onClick={() =>
+                                            handleLikeToggle(
+                                              reply._id,
+                                              "dislike"
+                                            )
+                                          }
+                                          className={`flex items-center space-x-1 px-1.5 py-1 rounded-full transition-colors duration-200 ${
+                                            replyLikeStatus?.isDisliked
+                                              ? "text-red-500 bg-red-50 dark:bg-red-900/30"
+                                              : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                          }`}
+                                        >
+                                          {replyLikeStatus?.isDisliked ? (
+                                            <FaThumbsDown className="text-xs" />
+                                          ) : (
+                                            <FaRegThumbsDown className="text-xs" />
+                                          )}
+                                          <span className="text-xs font-medium">
+                                            {replyLikeStatus?.dislikesCount ||
+                                              0}
+                                          </span>
+                                        </button> */}
+
+                                        {/* Reply dropdown menu */}
+                                        <div className="relative ml-auto">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setOpenDropdownId(
+                                                openDropdownId === reply._id
+                                                  ? null
+                                                  : reply._id
+                                              );
+                                            }}
+                                            className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                          >
+                                            <FiMoreVertical size={14} />
+                                          </button>
+
+                                          {openDropdownId === reply._id && (
+                                            <div
+                                              ref={dropdownRef}
+                                              className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700"
+                                            >
+                                              {isReplyOwner ? (
+                                                <>
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleEditComment(reply);
+                                                      setOpenDropdownId(null);
+                                                    }}
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                  >
+                                                    <FiEdit className="mr-2" />{" "}
+                                                    Edit
+                                                  </button>
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleDeleteComment(
+                                                        reply._id
+                                                      );
+                                                      setOpenDropdownId(null);
+                                                    }}
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                  >
+                                                    <FiTrash2 className="mr-2" />{" "}
+                                                    Delete
+                                                  </button>
+                                                </>
+                                              ) : (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenDropdownId(null);
+                                                  }}
+                                                  className="flex items-center w-full px-4 py-2 text-sm text-white-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                >
+                                                  <FaFlag className="mr-2" />{" "}
+                                                  Report
+                                                </button>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {/* Three dots dropdown */}
                     <div className="relative" ref={dropdownRef}>
