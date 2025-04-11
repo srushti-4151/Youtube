@@ -6,7 +6,7 @@ const app = express()
 
 const allowedOrigins = [
     "http://localhost:5173",  // For local testing
-    "https://youtube-three-snowy.vercel.app/"  // Your deployed frontend
+    "https://youtube-three-snowy.vercel.app"  // Your deployed frontend
 ];
 
 // .use used to add middlewares and configurations
