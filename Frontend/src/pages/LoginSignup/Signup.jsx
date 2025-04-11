@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, registerUser } from "../../redux/slices/Authslice";
+import {
+  loginUser,
+  registerUser,
+  resendOtpAction,
+  verifyUserOtp,
+} from "../../redux/slices/Authslice";
 import { handleError, handleSuccess } from "../../utils/toast";
 import { useNavigate } from "react-router-dom";
 import ImageCropper from "../../utils/ImageCropper";
@@ -22,6 +27,10 @@ const Signup = () => {
   const [showCropper, setShowCropper] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
+
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [password, setpassword] = useState("");
 
   // Convert Base64 to File
   const base64ToFile = (base64String, filename) => {
@@ -51,10 +60,10 @@ const Signup = () => {
 
   const onSubmit = async (data) => {
     try {
-        if (!avatar) {
-          handleError("Avatar is required!");
-          return;
-        }
+      if (!avatar) {
+        handleError("Avatar is required!");
+        return;
+      }
       const formData = new FormData();
       formData.append("username", data.username);
       formData.append("email", data.email);
@@ -76,28 +85,134 @@ const Signup = () => {
       const result = await dispatch(registerUser(formData)).unwrap();
 
       if (result.success) {
-        handleSuccess(result.message || "Registered successfully!");
+        handleSuccess(
+          result.message || "Registered successfully! Check your email for OTP."
+        );
+        setRegisteredEmail(data.email);
+        setpassword(data.password);
+        setShowOTPModal(true);
+      }
 
-        // Auto login after successful registration
-        const loginData = {
-          email: data.email,
-          password: data.password,
-        };
+      // const result = await dispatch(registerUser(formData)).unwrap();
 
-        const loginResult = await dispatch(loginUser(loginData)).unwrap();
+      // if (result.success) {
+      //   handleSuccess(result.message || "Registered successfully!");
 
-        if (loginResult.success) {
-          handleSuccess("Logged in successfully!");
+      //   // Auto login after successful registration
+      //   const loginData = {
+      //     email: data.email,
+      //     password: data.password,
+      //   };
+
+      //   const loginResult = await dispatch(loginUser(loginData)).unwrap();
+
+      //   if (loginResult.success) {
+      //     handleSuccess("Logged in successfully!");
+      //     navigate("/"); // Redirect to homepage
+      //   }
+      // }
+    } catch (err) {
+      handleError(err || "Registration failed. Please try again.");
+    }
+  };
+  const [otpValue, setOtpValue] = useState("");
+
+  const verifyOTP = async (otp) => {
+    try {
+      const response = await dispatch(
+        verifyUserOtp({
+          email: registeredEmail,
+          otp,
+        })
+      ).unwrap();
+
+      if (response.success) {
+        // Auto-login after successful verification
+        const loginResult = await dispatch(
+          loginUser({
+            email: registeredEmail,
+            password: password, // Or use original password if stored securely
+          })
+        ).unwrap();
+
+        if (loginResult) {
+          handleSuccess("Verified and logged in successfully!");
+          setShowOTPModal(false);
+          setpassword("");
+          setRegisteredEmail("");
           navigate("/"); // Redirect to homepage
         }
       }
-    } catch (err) {
-      handleError(err || "Registration failed. Please try again.");
+    } catch (error) {
+      handleError(error || "OTP verification failed");
+    }
+  };
+  const [isResending, setIsResending] = useState(false);
+
+  const resendOTP = async () => {
+    try {
+      setIsResending(true);
+      const response = await dispatch(
+        resendOtpAction(registeredEmail)
+      ).unwrap();
+
+      if (response) {
+        handleSuccess("A new OTP has been sent to your email.");
+      }
+    } catch (error) {
+      handleError(error || "Failed to resend OTP. Try again.");
+    } finally {
+      setIsResending(false);
     }
   };
 
   return (
     <div className="flex justify-center items-center p-6 dark:bg-black dark:text-white text-black bg-white rounded-lg">
+      {/* OTP Verification Modal */}
+      {showOTPModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg">
+            <h3 className="text-lg font-bold mb-4">Verify OTP</h3>
+            <p className="mb-4">We've sent an OTP to {registeredEmail}</p>
+
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              className="border p-2 w-full mb-4 text-black"
+              value={otpValue}
+              onChange={(e) => setOtpValue(e.target.value)}
+            />
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => verifyOTP(otpValue)}
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+              >
+                Verify
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowOTPModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {/* Resend OTP Button */}
+            <button
+              type="button"
+              onClick={resendOTP}
+              disabled={isResending}
+              className="mt-4 text-blue-500 hover:underline"
+            >
+              {isResending ? "Resending..." : "Resend OTP"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="dark:bg-gray-800 bg-gray-200 p-6 border border-gray-500 rounded-lg shadow-xl w-96 space-y-4"

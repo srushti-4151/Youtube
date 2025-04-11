@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory } from "../controllers/user.controller.js";
+import { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory, verifyOtp, resendOtp, sendResetOtp, verifyResetOtp, resetPassword, resendResetOtp } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
+
 
 router.route("/register").post(
   upload.fields([
@@ -18,6 +19,18 @@ router.route("/register").post(
   ]),
   registerUser
 );
+
+router.post("/send-reset-otp", sendResetOtp);
+router.post("/verify-reset-otp", verifyResetOtp);
+router.post("/reset-password", resetPassword);
+router.post("/resend-reset-otp", resendResetOtp);
+
+// Verify OTP for email verification
+router.route("/verify-otp").post(verifyOtp);
+router.route("/resendOtp").post(resendOtp);
+
+// Resend OTP (in case user didn't receive it)
+router.route("/resend-otp").post(resendOtp);
 
 router.route("/login").post(loginUser)
 //secured routes

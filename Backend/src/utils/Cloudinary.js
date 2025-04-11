@@ -14,21 +14,25 @@ cloudinary.config({
 
 const uploadOnCloudinary = async (localFilePath) => {
   try {
+    // console.log("File Path Before Upload:", localFilePath);
+
     if (!localFilePath) {
       console.log("uploadOnCloudinary: File path is missing");
       return null;
     }
+    
     //upload the file on cloudinary
-    console.log("Uploading to Cloudinary:", localFilePath);
+    // console.log("Uploading to Cloudinary:", localFilePath);
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
       // timeout: 70000, 
     });
-    console.log("Cloudinary Upload Success:", response);
+    // console.log("Cloudinary Upload Success:", response);
     if (!response || !response.secure_url) {
       console.error("Cloudinary upload failed:", response);
       return null;
     }
+    // console.log("File Path after Upload:", localFilePath);
 
     //file has been successfully uploaded
     //console.log("file is uploaded sccessfully");

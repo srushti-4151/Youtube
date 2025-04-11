@@ -26,13 +26,13 @@ api.interceptors.response.use(
 
       try {
         console.log("Token expired, refreshing token...");
-        const success = await refreshToken(); // Call refresh function
-
-        if (success) {
+        const newToken = await refreshToken();
+        if (newToken) {
+          // Update the original request's headers
           console.log("Token refreshed, retrying original request...");
-          return api(originalRequest); // Retry failed request
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest); // Retry with new token
         }
-
         console.log("Token refresh failed, rejecting request...");
         return Promise.reject(error);
       } catch (refreshError) {
@@ -64,11 +64,15 @@ export const getCurrentUser = async () => {
 export const refreshToken = async () => {
   try {
     const res = await api.post("/refresh-token");
+    console.log("refreshhhhhhhhhhhhhhhhhhhhhhhh :", res);
     const newAccessToken = res.data?.data?.accessToken;
-
-    // Update the Authorization header
-    api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
-    return newAccessToken;
+    
+    if (newAccessToken) {
+      // Update axios default headers
+      api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+      return newAccessToken;
+    }
+    return false;
   } catch (error) {
     console.error("Refresh token request failed:", error);
     return false;
@@ -109,6 +113,44 @@ export const register = async (formData) => {
   }
 };
 
+// Verify OTP API
+export const verifyOtp = async (email, otp) => {
+  try {
+    const response = await axios.post(`${API_URL}/verify-otp`, { email, otp });
+    return response.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "OTP verification failed",
+    };
+  }
+};
+
+
+export const resendOtp = async (email) => {
+  try {
+    console.log("resendOPTP email",email)
+    const response = await axios.post(`${API_URL}/resendOtp`, { email });
+    console.log("resendOPTP",response)
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || "Failed to resend OTP.";
+  }
+};
+
+export const changePassword = async ({oldPassword, newPassword}) => {
+  try {
+    const response = await api.post(`/change-password`, {oldPassword, newPassword});
+    console.log("change password: ", response);
+    return response.data;
+  } catch (error) {
+    // More consistent error handling
+    throw error.response?.data?.message || 
+          error.message || 
+          "Failed to change password";
+  }
+};
+
 // Logout API
 export const logout = async () => {
   try {
@@ -128,6 +170,36 @@ export const logout = async () => {
   }
 };
 
+
+// ✅ Send OTP for password reset
+export const sendResetOtp = async (email) => {
+  try {
+    const response = await axios.post(`${API_URL}/send-reset-otp`, { email });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || "Failed to send OTP.";
+  }
+};
+
+// ✅ Verify OTP
+export const verifyResetOtp = async (email, otp) => {
+  try {
+    const response = await axios.post(`${API_URL}/verify-reset-otp`, { email, otp });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || "Invalid OTP.";
+  }
+};
+
+// ✅ Reset Password
+export const resetPassword = async (email, newPassword) => {
+  try {
+    const response = await axios.post(`${API_URL}/reset-password`, { email, newPassword });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || "Password reset failed.";
+  }
+};
 // Get User Channel Profile
 // export const getUserChannelProfile = async (username) => {
 //   try {

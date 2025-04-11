@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import VideoCard from "../../components/VideoCard";
 import thumb1 from "../../assets/images/img1.jpg";
 import NoVideo from "../../components/NoVideo";
@@ -27,6 +27,7 @@ const Home = () => {
     (state) => state.videos.videos || {}
   );
   const { alltweets } = useSelector((state) => state.tweets);
+  const lastContentRef = useRef(null);
   // console.log("alltweets", alltweets);
   // console.log("videos alll", videos);
 
@@ -35,9 +36,20 @@ const Home = () => {
     dispatch(fetchAllTweets());
   }, []);
 
+  // useEffect(() => {
+  //   if (videos.length > 0 || alltweets.length > 0) {
+  //     setContent(shuffleArray([...videos, ...alltweets])); // Merge & shuffle
+  //   }
+  // }, [videos, alltweets]);
   useEffect(() => {
     if (videos.length > 0 || alltweets.length > 0) {
-      setContent(shuffleArray([...videos, ...alltweets])); // Merge & shuffle
+      const newContent = shuffleArray([...videos, ...alltweets]);
+  
+      // Compare with last stored content to avoid unnecessary state updates
+      if (!lastContentRef.current || lastContentRef.current !== newContent) {
+        setContent(newContent);
+        lastContentRef.current = newContent; // Store last shuffled content
+      }
     }
   }, [videos, alltweets]);
 

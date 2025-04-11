@@ -6,7 +6,7 @@ const TWEET_API_URL = "http://localhost:8000/api/v1/tweets";
 export const getAllTweet = async () => {
   try {
     const response = await axios.get(`${TWEET_API_URL}/all`);
-    console.log("getAllTweet reonse :", response)
+    // console.log("getAllTweet reonse :", response)
     return response.data;
   } catch (error) {
     return {

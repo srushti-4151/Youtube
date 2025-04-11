@@ -58,6 +58,12 @@ import {
   updateAvatar,
   updateCoverImage,
   updateUserAccountDetails,
+  verifyOtp,
+  resendOtp,
+  changePassword,
+  resetPassword,
+  verifyResetOtp,
+  sendResetOtp,
 } from "../../api/AuthApi.js";
 
 export const refreshAuthToken = createAsyncThunk(
@@ -78,36 +84,6 @@ export const refreshAuthToken = createAsyncThunk(
     } catch (error) {
       return thunkAPI.rejectWithValue("Token refresh failed");
     }
-  }
-);
-
-
-export const loginUser = createAsyncThunk(
-  "auth/login",
-  async (userData, thunkAPI) => {
-    const response = await login(userData); // Calls the API function
-    if (!response.success) return thunkAPI.rejectWithValue(response.message); // If error, send it to Redux state
-    return response; // Otherwise, return the user data to store it in Redux state
-  }
-);
-
-export const registerUser = createAsyncThunk(
-  "auth/register",
-  async (formData, thunkAPI) => {
-    const response = await register(formData);
-    console.log("register res:", response)
-    if (!response.success) return thunkAPI.rejectWithValue(response.message);
-    return response;
-  }
-);
-
-
-export const logoutUser = createAsyncThunk(
-  "auth/logout",
-  async (_, thunkAPI) => {
-    const response = await logout();
-    if (!response.success) return thunkAPI.rejectWithValue(response.message);
-    return null; // Clears user state
   }
 );
 
@@ -138,6 +114,75 @@ export const fetchCurrentUser = createAsyncThunk(
     return thunkAPI.rejectWithValue("Failed to fetch user");
   }
 );
+
+export const loginUser = createAsyncThunk(
+  "auth/login",
+  async (userData, thunkAPI) => {
+    const response = await login(userData); // Calls the API function
+    if (!response.success) return thunkAPI.rejectWithValue(response.message); // If error, send it to Redux state
+    return response; // Otherwise, return the user data to store it in Redux state
+  }
+);
+
+export const registerUser = createAsyncThunk(
+  "auth/register",
+  async (formData, thunkAPI) => {
+    const response = await register(formData);
+    console.log("register res:", response)
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return response;
+  }
+);
+
+export const verifyUserOtp = createAsyncThunk(
+  "auth/verifyOtp",
+  async ({ email, otp }, thunkAPI) => {
+    const response = await verifyOtp(email, otp);
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return response;
+  }
+);
+
+export const resendOtpAction = createAsyncThunk(
+  "auth/resendOtp",
+  async (email, thunkAPI) => {
+    try {
+      console.log("email", email);
+      const response = await resendOtp(email);
+      return response; 
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error); 
+    }
+  }
+);
+
+export const changePasswordAction = createAsyncThunk(
+  "auth/changePassword",
+  async ({oldPassword, newPassword}, thunkAPI) => {
+    try {
+      const response = await changePassword({oldPassword, newPassword});
+      return response;
+    } catch (error) {
+      // Handle both string errors and error objects
+      return thunkAPI.rejectWithValue(
+        typeof error === 'string' ? error : 
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to change password"
+      );
+    }
+  }
+);
+
+export const logoutUser = createAsyncThunk(
+  "auth/logout",
+  async (_, thunkAPI) => {
+    const response = await logout();
+    if (!response.success) return thunkAPI.rejectWithValue(response.message);
+    return null; // Clears user state
+  }
+);
+
 
 export const fetchUserChannelProfile = createAsyncThunk(
   "auth/fetchUserChannelProfile",
@@ -181,6 +226,31 @@ export const updateAccountDetails = createAsyncThunk(
 );
 
 
+// ✅ Thunks for async actions
+export const sendOtpThunk = createAsyncThunk("auth/sendOtp", async (email, { rejectWithValue }) => {
+  try {
+    return await sendResetOtp(email);
+  } catch (error) {
+    return rejectWithValue(error);
+  }
+});
+
+export const verifyOtpThunk = createAsyncThunk("auth/verifyOtp", async ({ email, otp }, { rejectWithValue }) => {
+  try {
+    return await verifyResetOtp(email, otp);
+  } catch (error) {
+    return rejectWithValue(error);
+  }
+});
+
+export const resetPasswordThunk = createAsyncThunk("auth/resetPassword", async ({ email, newPassword }, { rejectWithValue }) => {
+  try {
+    return await resetPassword(email, newPassword);
+  } catch (error) {
+    return rejectWithValue(error);
+  }
+});
+
 const initialState = {
   isAuthenticated: false,
   user: null,
@@ -207,9 +277,11 @@ const authSlice = createSlice({
         state.user = action.payload.data.user;
         state.token = action.payload.data.accessToken;
         state.isLoading = false;
-
+        // console.log("Access Token from Redux:", action.payload.data.accessToken);
+        
         // Ensure token is set globally in Axios
         api.defaults.headers.common["Authorization"] = `Bearer ${action.payload.data.accessToken}`;
+        // console.log("Set Authorization Header:", api.defaults.headers.common["Authorization"]);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isAuthenticated = false;
@@ -245,7 +317,8 @@ const authSlice = createSlice({
         state.token = action.payload;
         state.isAuthenticated = true;
         state.error = null;
-      
+        
+        api.defaults.headers.common["Authorization"] = `Bearer ${action.payload}`;
         // **Fix: Ensure token is updated globally**
         // api.defaults.headers.common["Authorization"] = `Bearer ${action.payload}`;
       })
@@ -288,6 +361,8 @@ const authSlice = createSlice({
         state.token = null;
         state.isLoading = false;
         state.error = null;
+
+        delete api.defaults.headers.common["Authorization"]; 
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.isLoading = false;

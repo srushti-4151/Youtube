@@ -4,6 +4,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/Cloudinary.js";
 import jwt from "jsonwebtoken";
+import { EMAIL_VERIFY_TEMPLATE } from "../utils/EmailTemp.js";
+import transporter from "../utils/sendEmail.js";
+import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 // 1. User Logs In = The frontend sends email & password to the backend
 // 2. Backend generates Access (used for API requests) & Refresh ( stored in an HTTP-only cookie) Toekns
@@ -19,22 +23,76 @@ import jwt from "jsonwebtoken";
 // -If invalid/expired: Reject the request (user must log in again).
 // 7. The frontend saves the new Access Token and retries the original request
 
-const generateAccessAndRefereshTokens = async (userId) => {
+export const verifyOtp = async (req, res) => {
   try {
-    const user = await User.findById(userId);
-    const accessToken = user.generateAccessToken(); //method we made in model file
-    const refreshToken = user.generateRefreshToken(); //method we made in model file
+    const { email, otp } = req.body;
 
-    user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false }); // all required filed no need bcz we only need to save rfresh token 
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
 
-    return { accessToken, refreshToken };
+    // Check if OTP is valid
+    if (!user.verifyOtp || user.verifyOtp !== String(otp)) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
 
+    // Check if OTP is expired
+    if (!user.verifyOtpExpireAt || new Date(user.verifyOtpExpireAt) < new Date()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // Mark the user as verified
+    user.isAccountVerified = true;
+    user.verifyOtp = null;
+    user.verifyOtpExpireAt = null;
+    await user.save();
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Email verified successfully!"));
   } catch (error) {
-    throw new ApiError(
-      500,
-      "Something went wrong while generating referesh and access token"
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+export const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Find user in the database
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    // Generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString(); // 6-digit OTP
+    const otpExpireTime = Date.now() + 3 * 60 * 1000; // Expires in 15 minutes
+
+    // Save OTP in the database
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = otpExpireTime;
+    await user.save();
+
+    // Send OTP to email
+    await transporter.sendMail(
+      {
+        from: process.env.SENDER_EMAIL_ID,
+        to: email,
+        subject: "Your Verification OTP",
+        html: `<p>Your OTP is <strong>${otp}</strong>. It expires in 3 minutes.</p>`,
+      },
+      (error, info) => {
+        if (error) {
+          console.log("Email sending error:", error);
+        } else {
+          console.log("Email sent successfully:", info.response);
+        }
+      }
     );
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "OTP sent successfully"));
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
@@ -48,6 +106,9 @@ const registerUser = asyncHandler(async (req, res) => {
   // remove password and refresh token field from response
   // check for user creation
   // return res
+
+  // console.log("Uploaded files:", req.files);
+  // console.log("Request body:", req.body);
 
   const { fullName, email, username, password } = req.body;
   // console.log("email", email);
@@ -88,9 +149,10 @@ const registerUser = asyncHandler(async (req, res) => {
   //console.log("Avatar Upload Response: ", avatar);
   //console.log("Cover Image Upload Response: ", coverImage);
 
-  if (!avatar) {
+  if (!avatar?.url) {
     throw new ApiError(400, "Avatar file is required");
   }
+  // console.log("User Data:", { fullName, email, username, password, otp, otpExpireTime });
 
   const user = await User.create({
     fullName,
@@ -100,6 +162,10 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     username: username.toLowerCase(),
   });
+
+  await sendOtp({ body: { email: user.email } }, res);
+  // console.log("OTP sent to:", user.email);
+
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
@@ -111,8 +177,64 @@ const registerUser = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, createdUser, "User registered Successfully"));
+    .json(new ApiResponse(200, createdUser, "User registered SuccessfullyCheck your email for verification OTP."));
 });
+
+export const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json(new ApiResponse(200, {}, "Email is required"));
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    // ✅ Prevent sending OTP if user is already verified
+    if (user.isAccountVerified) {
+      return res.status(400).json({ message: "Account is already verified. No need to resend OTP." });
+    }
+
+    // ✅ Generate a 6-digit OTP safely
+    const otp = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+    
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = Date.now() + 15 * 60 * 1000; // Expires in 15 minutes
+    await user.save();
+
+    // ✅ Send OTP email using a proper template
+    const emailBody = EMAIL_VERIFY_TEMPLATE.replace("{{email}}", email).replace("{{otp}}", otp);
+
+    await transporter.sendMail({
+      from: process.env.SENDER_EMAIL_ID,
+      to: email,
+      subject: "New Verification OTP",
+      html: emailBody,
+    });
+
+    return res.status(200).json(new ApiResponse(200, {}, "New OTP sent to email"));
+  } catch (error) {
+    console.error("Resend OTP error:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+const generateAccessAndRefereshTokens = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    const accessToken = user.generateAccessToken(); //method we made in model file
+    const refreshToken = user.generateRefreshToken(); //method we made in model file
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false }); // all required filed no need bcz we only need to save rfresh token 
+
+    return { accessToken, refreshToken };
+
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating referesh and access token"
+    );
+  }
+};
 
 const loginUser = asyncHandler(async (req, res) => {
   // req body -> data
@@ -247,7 +369,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: true,
-      sameSite: "None"
+      sameSite: "none"
     };
 
     // Generate new tokens (this function will save the new refresh token)
@@ -406,6 +528,8 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
       new ApiResponse(200, user, "Cover image updated successfully")
   )
 })
+
+
 
 //old one with jwt verfy
 // const getUserChannelProfile = asyncHandler(async(req, res) => {
@@ -687,6 +811,122 @@ const getWatchHistory = asyncHandler(async(req, res) => {
       )
   )
 })
+
+
+
+//  1. Send OTP for Password Reset
+export const sendResetOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Generate OTP & Expiry Time
+    const otp = crypto.randomInt(100000, 999999).toString(); 
+    user.resetOtp = otp;
+    user.resetOtpExpireAt = Date.now() + 3 * 60 * 1000; // Expires in 3 minutes
+    await user.save();
+
+    // Send OTP via Email
+    await transporter.sendMail({
+      from: process.env.SENDER_EMAIL_ID,
+      to: email,
+      subject: "Password Reset OTP",
+      html: `<p>Your OTP is <strong>${otp}</strong>. It expires in 3 minutes.</p>`,
+    });
+
+    return res.status(200).json(new ApiResponse(200, {}, "OTP sent successfully"));
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+//  2. Verify OTP
+export const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Validate OTP
+    if (!user.resetOtp || user.resetOtp !== String(otp)) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (!user.resetOtpExpireAt || new Date(user.resetOtpExpireAt) < new Date()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // Clear OTP fields
+    user.resetOtp = null;
+    user.resetOtpExpireAt = null;
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(200, {}, "OTP verified successfully"));
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+//  3. Reset Password
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) return res.status(400).json({ message: "Email and new password are required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+
+    // Hash new password
+    // const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // user.password = hashedPassword;
+
+    // Clear OTP fields if not already cleared
+    user.resetOtp = null;
+    user.resetOtpExpireAt = null;
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(200, {}, "Password reset successfully"));
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+//  4. Resend OTP
+export const resendResetOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Generate a new OTP
+    const otp = crypto.randomInt(100000, 999999).toString(); 
+    user.resetOtp = otp;
+    user.resetOtpExpireAt = Date.now() + 3 * 60 * 1000; // Expires in 3 minutes
+    await user.save();
+
+    // Send OTP via Email
+    await transporter.sendMail({
+      from: process.env.SENDER_EMAIL_ID,
+      to: email,
+      subject: "New Password Reset OTP",
+      html: `<p>Your new OTP is <strong>${otp}</strong>. It expires in 3 minutes.</p>`,
+    });
+
+    return res.status(200).json(new ApiResponse(200, {}, "New OTP sent successfully"));
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
 
 export { 
   registerUser,

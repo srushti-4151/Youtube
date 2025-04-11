@@ -41,6 +41,7 @@ const Navbar = () => {
     if (query.trim()) {
       navigate(`/search/${query}`); // Navigate to search results page
     }
+    setquery("")
     // dispatch(fetchSearchResults(query)); // Directly call fetchSearchResults
   };
 
@@ -62,7 +63,7 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   // Voice Search Functionality
   // const handleVoiceSearch = () => {
   //   if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
@@ -499,6 +500,17 @@ const Navbar = () => {
                     `}
               />
             </div>
+          </button>
+          <button
+            onClick={handleVoiceSearch}
+            className={`px-2 py-2 rounded-full transition-all ${
+              isListening
+                ? "bg-red-600 text-white"
+                : "dark:bg-gray-800 dark:hover:bg-gray-700 bg-gray-100 hover:bg-gray-300 dark:text-white text-black"
+            }`}
+            aria-label={isListening ? "Stop listening" : "Start voice search"}
+          >
+            <AiOutlineAudio size={22} />
           </button>
 
           {/* Mobile Menu Humburge */}

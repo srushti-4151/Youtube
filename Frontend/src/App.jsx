@@ -27,13 +27,23 @@ import Signup from "./pages/LoginSignup/Signup";
 import PlayListPage from "./pages/PlaylistPage/PlayListPage";
 import Tweetpage from "./pages/TweetPage/Tweetpage";
 import SearchResults from "./pages/Search/SearchResults";
+import Settings from "./pages/Settings/Settings";
+import ForgetPassword from "./pages/LoginSignup/ForgetPassword";
 
 function App() {
   const dispatch = useDispatch();
 
+  // useEffect(() => {
+  //   // dispatch(fetchCurrentUser()).then((res) => console.log("user fetched : ", res));
+  //   dispatch(fetchCurrentUser());
+  // }, [dispatch]);
   useEffect(() => {
-    // dispatch(fetchCurrentUser()).then((res) => console.log("user fetched : ", res));
-    dispatch(fetchCurrentUser());
+    dispatch(fetchCurrentUser())
+      .unwrap()
+      .catch((error) => {
+        console.log("Failed to fetch user:", error);
+        // Handle logout or redirect if needed
+      });
   }, [dispatch]);
 
   // const user = useSelector((state) => state.auth.user)
@@ -76,6 +86,8 @@ function App() {
               <Route path="/playlist/:playlistId" element={<PlayListPage />} />
               <Route path="/search/:query" element={<SearchResults />} />
               <Route path="/tweet/:tweetId" element={<Tweetpage />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/forget" element={<ForgetPassword />} />
 
               <Route path="/profile/:username" element={<ProfileLayout />}>
                 <Route index element={<Navigate to="videos" replace />} />

@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../redux/slices/Authslice";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -53,6 +53,16 @@ const Login = () => {
           {errors.password && (
             <p className="text-red-500">{errors.password.message}</p>
           )}
+
+          {/* Forgot Password Link */}
+          <div className="text-right mt-1">
+            <Link
+              to="/forget" 
+              className="text-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
 
         {/* Submit Button */}
