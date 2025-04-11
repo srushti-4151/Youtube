@@ -4,9 +4,14 @@ import cookieParser from "cookie-parser"
 
 const app = express()
 
+const allowedOrigins = [
+    "http://localhost:5173",  // For local testing
+    "https://youtube-three-snowy.vercel.app/"  // Your deployed frontend
+];
+
 // .use used to add middlewares and configurations
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: allowedOrigins,
     credentials : true //option allows cookies to be sent with cross-origin requests.
 }))
 
