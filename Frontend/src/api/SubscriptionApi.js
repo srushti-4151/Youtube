@@ -1,7 +1,7 @@
 import axios from "axios";
 import { api } from "./AuthApi";
 
-const SUBS_API_URL = "http://localhost:8000/api/v1/subscriptions";
+const SUBS_API_URL = "https://youtube-ydae.onrender.com/api/v1/subscriptions";
 
 
 // Get User Subscribers Count

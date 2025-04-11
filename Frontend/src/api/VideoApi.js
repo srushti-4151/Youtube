@@ -1,7 +1,7 @@
 import axios from "axios";
 import { api } from "./AuthApi";
 
-const VIDEO_API_URL = "http://localhost:8000/api/v1/videos";
+const VIDEO_API_URL = "https://youtube-ydae.onrender.com/api/v1/videos";
 
 // Function to search videos
 export const searchVideos = async (query) => {

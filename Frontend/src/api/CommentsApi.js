@@ -1,7 +1,7 @@
 import axios from "axios";
 import { api } from "./AuthApi";
 
-const COMMENT_API_URL = "http://localhost:8000/api/v1/comments";
+const COMMENT_API_URL = "https://youtube-ydae.onrender.com/api/v1/comments";
 
 // Add a Comment
 export const addComment = async (videoId, commentData) => {

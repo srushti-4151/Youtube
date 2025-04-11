@@ -1,7 +1,7 @@
 import { api } from "./AuthApi.js"; // Use your existing API setup
 import axios from "axios";
 
-const Like_API_URL = "http://localhost:8000/api/v1/likes";
+const Like_API_URL = "https://youtube-ydae.onrender.com/api/v1/likes";
 
 export const getLikedVideos = async () => {
   try {
