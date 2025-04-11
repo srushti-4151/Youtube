@@ -1,4 +1,3 @@
-import { Playlist } from "../../../Backend/src/models/playlist.model";
 import { api } from "./AuthApi";
 
 const PLAYLIST_API_URL = "http://localhost:8000/api/v1/playlists";
