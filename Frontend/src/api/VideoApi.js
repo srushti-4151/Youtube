@@ -1,7 +1,13 @@
 import axios from "axios";
 import { api } from "./AuthApi";
 
-const VIDEO_API_URL = "https://youtube-ydae.onrender.com/api/v1/videos";
+// const VIDEO_API_URL = "http://localhost:8000/api/v1/videos";
+// const VIDEO_API_URL = "https://youtube-ydae.onrender.com/api/v1/videos";
+
+const VIDEO_API_URL = import.meta.env.MODE === "development"
+    ? "http://localhost:8000/api/v1/videos"  // Local backend
+    : "https://youtube-ydae.onrender.com/api/v1/videos";  // Deployed backend
+
 
 // Function to search videos
 export const searchVideos = async (query) => {

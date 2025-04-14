@@ -1,7 +1,12 @@
 import axios from "axios";
 import { api } from "./AuthApi";
 
-const SUBS_API_URL = "https://youtube-ydae.onrender.com/api/v1/subscriptions";
+// const SUBS_API_URL = "http://localhost:8000/api/v1/subscriptions";
+// const SUBS_API_URL = "https://youtube-ydae.onrender.com/api/v1/subscriptions";
+
+const SUBS_API_URL = import.meta.env.MODE === "development"
+    ? "http://localhost:8000/api/v1/subscriptions"  // Local backend
+    : "https://youtube-ydae.onrender.com/api/v1/subscriptions";  // Deployed backend
 
 
 // Get User Subscribers Count

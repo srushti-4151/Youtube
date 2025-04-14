@@ -36,6 +36,7 @@ import {
 import RecommendedVideos from "../../components/RecommendedVideos.jsx";
 import { countView } from "../../api/viewsApi.js";
 import VideoPlayer from "../../components/VideoPlayer.jsx";
+import { addUserInteraction } from "../../api/recommendationApi.js";
 
 // import { addHistory } from "../../redux/slices/ViewSlice.js";
 
@@ -51,6 +52,7 @@ const VideoPage = () => {
   const menuRef = useRef(null);
   const [visibleReplies, setVisibleReplies] = useState(null); // Track which comment is expanded
 
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
   const toggleReplies = (commentId) => {
     setVisibleReplies(visibleReplies === commentId ? null : commentId);
   };
@@ -70,11 +72,13 @@ const VideoPage = () => {
 
   useEffect(() => {
     if (!id) return;
+    if(!user) return;
 
     const timeout = setTimeout(() => {
       console.log("Adding to watch history:", id);
       countView(id); // Call API after delay
       // dispatch(addHistory(id));
+      addUserInteraction(user._id, id, true, false, false);
     }, 5000); // Wait 5 seconds before counting view
 
     return () => clearTimeout(timeout); // Cleanup on unmount
@@ -94,7 +98,6 @@ const VideoPage = () => {
     dispatch(fetchVideoComments(id));
   }, [id, dispatch]);
 
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
   useEffect(() => {
     if (isAuthenticated && selectedVideo?.owner?.username) {
       dispatch(checkIsSubscribed(selectedVideo.owner.username));
@@ -194,6 +197,7 @@ const VideoPage = () => {
         handleSuccess("Liked video");
       }
       dispatch(getVideoLikesStatusapi(id));
+      addUserInteraction(user._id, id, true, true, false);
     } catch (error) {
       handleError("Failed to liked video");
       console.error("Failed to liked video:", error);
@@ -418,6 +422,7 @@ const VideoPage = () => {
                       dispatch(
                         toggleUserSubscription(selectedVideo?.owner?._id)
                       );
+                      addUserInteraction(user._id, selectedVideo._id, true, false, true);
                     }}
                     className={`flex items-center gap-2 px-3 py-2 text-sm rounded-3xl mt-2 w-max self-start flex-shrink-0 ml-2 xl:ml-0
                       ${

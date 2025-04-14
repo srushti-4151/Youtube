@@ -6,7 +6,7 @@ import Navbar from "./components/Navbar";
 import LikedVideos from "./pages/LikedVideos/LikedVideos";
 import History from "./pages/History/History";
 import MyContent from "./pages/MyContent/MyContent";
-import Collection from "./pages/Collection/Collection";
+import Collection from "./pages/Trending/Trending";
 import WatchLater from "./pages/WatchLater/WatchLater";
 import Home from "./pages/Home/Home";
 import { useDispatch, useSelector } from "react-redux";
@@ -29,6 +29,7 @@ import Tweetpage from "./pages/TweetPage/Tweetpage";
 import SearchResults from "./pages/Search/SearchResults";
 import Settings from "./pages/Settings/Settings";
 import ForgetPassword from "./pages/LoginSignup/ForgetPassword";
+import Trending from "./pages/Trending/Trending";
 
 function App() {
   const dispatch = useDispatch();
@@ -88,6 +89,7 @@ function App() {
               <Route path="/tweet/:tweetId" element={<Tweetpage />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/forget" element={<ForgetPassword />} />
+              <Route path="/trending" element={<Trending />} />
 
               <Route path="/profile/:username" element={<ProfileLayout />}>
                 <Route index element={<Navigate to="videos" replace />} />

@@ -13,6 +13,7 @@
     "@fontsource/nunito": "^5.2.5",
     "@reduxjs/toolkit": "^2.6.1",
     "@tailwindcss/vite": "^4.0.12",
+    "@tensorflow/tfjs": "^4.22.0",
     "axios": "^1.8.3",
     "hls.js": "^1.6.1",
     "react": "^19.0.0",

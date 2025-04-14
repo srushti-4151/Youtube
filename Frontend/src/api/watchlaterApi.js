@@ -1,6 +1,11 @@
 import { api } from "./AuthApi";
 
-const Wl_API_URL = "https://youtube-ydae.onrender.com/api/v1/watchlater";
+// const Wl_API_URL = "http://localhost:8000/api/v1/watchlater";
+// const Wl_API_URL = "https://youtube-ydae.onrender.com/api/v1/watchlater";
+
+const Wl_API_URL = import.meta.env.MODE === "development"
+    ? "http://localhost:8000/api/v1/watchlater"  // Local backend
+    : "https://youtube-ydae.onrender.com/api/v1/watchlater";  // Deployed backend
 
 export const getWatchLaterVideos = async () => {
   try {

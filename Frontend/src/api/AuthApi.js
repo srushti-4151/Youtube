@@ -1,6 +1,11 @@
 import axios from "axios";
 
-const API_URL = "https://youtube-ydae.onrender.com/api/v1/users";
+// const API_URL = "http://localhost:8000/api/v1/users";
+// const API_URL = "https://youtube-ydae.onrender.com/api/v1/users";
+
+const API_URL = import.meta.env.MODE === "development"
+    ? "http://localhost:8000/api/v1/users"  // Local backend
+    : "https://youtube-ydae.onrender.com/api/v1/users";  // Deployed backend
 
 
 // Create an Axios Instance

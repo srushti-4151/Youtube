@@ -7,6 +7,7 @@ import { fetchAllVideos } from "../../redux/slices/Videoslice";
 import Loader from "../../components/Loader";
 import { fetchAllTweets } from "../../redux/slices/TweetSlice";
 import TweetCard from "../../components/TweetCard";
+import Trending from "../Trending/Trending";
 
 // const shuffleArray = (array) => {
 //   return array.sort(() => Math.random() - 0.5);
@@ -21,6 +22,7 @@ const shuffleArray = (array) => {
 };
 
 const Home = () => {
+  const [activeTab, setActiveTab] = useState("All");
   const [content, setContent] = useState([]);
   const dispatch = useDispatch();
   const { videos = [], AllLoading } = useSelector(
@@ -44,7 +46,7 @@ const Home = () => {
   useEffect(() => {
     if (videos.length > 0 || alltweets.length > 0) {
       const newContent = shuffleArray([...videos, ...alltweets]);
-  
+
       // Compare with last stored content to avoid unnecessary state updates
       if (!lastContentRef.current || lastContentRef.current !== newContent) {
         setContent(newContent);
@@ -55,25 +57,48 @@ const Home = () => {
 
   return (
     <div className="w-full p-4">
-      {!videos || videos.length === 0 ? (
-        <Loader />
+      {/* Tabs */}
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={() => setActiveTab("All")}
+          className={`px-4 py-2 rounded ${
+            activeTab === "All"
+              ? "bg-purple-600 text-white"
+              : "bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setActiveTab("Trending")}
+          className={`px-4 py-2 rounded ${
+            activeTab === "Trending"
+              ? "bg-purple-600 text-white"
+              : "bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
+          }`}
+        >
+          Trending
+        </button>
+      </div>
+      {activeTab === "All" ? (
+        !videos || videos.length === 0 ? (
+          <Loader />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+            {content.map((item, index) =>
+              item.videoFile ? (
+                <VideoCard key={index} video={item} />
+              ) : (
+                <TweetCard key={index} tweet={item} />
+              )
+            )}
+          </div>
+        )
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-          {/* {videos.map((video, index) => (
-            <VideoCard key={index} video={video} />
-          ))} */}
-          {content.map((item, index) =>
-            item.videoFile ? (
-              <VideoCard key={index} video={item} />
-            ) : (
-              <TweetCard key={index} tweet={item} />
-            )
-          )}
-        </div>
+        <Trending />
       )}
     </div>
   );
 };
 
 export default Home;
-

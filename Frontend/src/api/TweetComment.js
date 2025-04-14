@@ -1,7 +1,14 @@
 import axios from "axios";
 import { api } from "./AuthApi";
 
-const TC_API_URL = "https://youtube-ydae.onrender.com/api/v1/tweetcomment";
+// const TC_API_URL = "http://localhost:8000/api/v1/tweetcomment";
+// const TC_API_URL = "https://youtube-ydae.onrender.com/api/v1/tweetcomment";
+
+const TC_API_URL = import.meta.env.MODE === "development"
+    ? "http://localhost:8000/api/v1/tweetcomment"  // Local backend
+    : "https://youtube-ydae.onrender.com/api/v1/tweetcomment";  // Deployed backend
+
+
 
 // Add a Comment
 export const addTweetComment = async (tweetId, commentData) => {

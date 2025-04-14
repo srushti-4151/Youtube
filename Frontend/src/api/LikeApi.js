@@ -1,7 +1,13 @@
 import { api } from "./AuthApi.js"; // Use your existing API setup
 import axios from "axios";
 
-const Like_API_URL = "https://youtube-ydae.onrender.com/api/v1/likes";
+// const Like_API_URL = "http://localhost:8000/api/v1/likes";
+// const Like_API_URL = "https://youtube-ydae.onrender.com/api/v1/likes";
+
+const Like_API_URL = import.meta.env.MODE === "development"
+    ? "http://localhost:8000/api/v1/likes"  // Local backend
+    : "https://youtube-ydae.onrender.com/api/v1/likes";  // Deployed backend
+
 
 export const getLikedVideos = async () => {
   try {
