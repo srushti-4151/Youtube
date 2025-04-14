@@ -72,13 +72,15 @@ const VideoPage = () => {
 
   useEffect(() => {
     if (!id) return;
-    if(!user) return;
+    
 
     const timeout = setTimeout(() => {
       console.log("Adding to watch history:", id);
       countView(id); // Call API after delay
       // dispatch(addHistory(id));
-      addUserInteraction(user._id, id, true, false, false);
+      if(user){
+        addUserInteraction(user._id, id, true, false, false);
+      }
     }, 5000); // Wait 5 seconds before counting view
 
     return () => clearTimeout(timeout); // Cleanup on unmount
