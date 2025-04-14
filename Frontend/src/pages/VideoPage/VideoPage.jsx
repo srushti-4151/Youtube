@@ -363,13 +363,13 @@ const VideoPage = () => {
             <div className="w-full h-64 lg:h-auto rounded-lg overflow-hidden">
               {selectedVideo ? (
                 <div className="relative">
-                  {/* <video
+                  <video
                     src={selectedVideo?.videoFile}
                     controls
                     autoPlay
                     className="w-full rounded-lg dark:shadow-custom dark:shadow-neutral-900 aspect-video"
-                  ></video> */}
-                  <VideoPlayer videoUrl={selectedVideo?.videoFile.replace(".mp4", ".m3u8")} />
+                  ></video>
+                  {/* <VideoPlayer videoUrl={selectedVideo?.videoFile.replace(".mp4", ".m3u8")} /> */}
                 </div>
               ) : (
                 <div className="h-64 lg:h-auto bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
