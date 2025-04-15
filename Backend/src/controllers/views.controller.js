@@ -4,46 +4,56 @@ import crypto from "crypto";
 
 // Function to generate a unique guestId
 const generateGuestId = (ip = "", userAgent = "") => {
-    const hash = crypto.createHash("sha256");
-    hash.update(ip + userAgent);
-    return hash.digest("hex");
-  };
-  
+  const hash = crypto.createHash("sha256");
+  hash.update(ip + userAgent);
+  return hash.digest("hex");
+};
 
-  // A. CHECK IF VIEW EXISTS:
-  //  - For guest: Check by guest ID (hashed IP+user agent)
-  //  - For user: Check by user ID
+// A. CHECK IF VIEW EXISTS:
+//  - For guest: Check by guest ID (hashed IP+user agent)
+//  - For user: Check by user ID
 
-  // B. IF NEW VIEW:
-  //   - Count the view (same as before)
-  //   - IF user is logged-in → ALSO add/update their watch history
+// B. IF NEW VIEW:
+//   - Count the view (same as before)
+//   - IF user is logged-in → ALSO add/update their watch history
 
-  // C. IF VIEW EXISTS:
-  //   - For users → Still update watch history timestamp
-  //   - For guests → Do nothing extra
+// C. IF VIEW EXISTS:
+//   - For users → Still update watch history timestamp
+//   - For guests → Do nothing extra
 
 export const countVideoView = async (req, res) => {
   try {
-     // Get videoid from req params
-     // check if user logged in - if yes, use UserId 
-     //                         - if no, generate unique guestId
+    // Get videoid from req params
+    // check if user logged in - if yes, use UserId
+    //                         - if no, generate unique guestId
     const { videoId } = req.params;
     const userId = req.user ? req.user.id : null; // Get userId if authenticated
     let guestId = null;
 
-     
+    // console.log("here is UserID: ", userId);
+
     if (!userId) {
       const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
       const userAgent = req.headers["user-agent"];
       guestId = generateGuestId(ip, userAgent);
     }
+    // console.log("here is guestid: ", guestId);
 
     //Check if the user/Guest hs already viewed this video
     //stops the same user/guest from adding multiple views.
-    const existingView = await VideoView.findOne({
-      video: videoId,
-      $or: [{ user: userId }, { guestId }],
-    });
+    let existingView = null;
+
+    if (userId) {
+      existingView = await VideoView.findOne({
+        video: videoId,
+        user: userId,
+      });
+    } else {
+      existingView = await VideoView.findOne({
+        video: videoId,
+        guestId: guestId,
+      });
+    }
 
     if (existingView) {
       if (userId) {
@@ -63,18 +73,20 @@ export const countVideoView = async (req, res) => {
         guestId, // Check if this guest has a logged-in view
         user: { $ne: null }, // User was logged in at the time
       });
-    
+
       if (loggedInView) {
-        return res.status(200).json({ message: "View already counted as a logged-in user" });
+        return res
+          .status(200)
+          .json({ message: "View already counted as a logged-in user" });
       }
     }
 
     // Save new view
-    await VideoView.create({ 
-      video: videoId, 
-      user: userId, 
-      guestId, 
-      watchHistory: !!userId 
+    await VideoView.create({
+      video: videoId,
+      user: userId,
+      guestId,
+      watchHistory: !!userId,
     });
 
     res.status(201).json({ message: "View counted" });
@@ -82,7 +94,6 @@ export const countVideoView = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 // Get user's watch history
 // export const getWatchHistory = async (req, res) => {
@@ -110,7 +121,12 @@ export const getWatchHistory = async (req, res) => {
     }
 
     const history = await VideoView.aggregate([
-      { $match: { user: new mongoose.Types.ObjectId(userId), watchHistory: true } },
+      {
+        $match: {
+          user: new mongoose.Types.ObjectId(userId),
+          watchHistory: true,
+        },
+      },
       { $sort: { updatedAt: -1 } },
       {
         $lookup: {
@@ -132,7 +148,7 @@ export const getWatchHistory = async (req, res) => {
       },
     ]);
     // console.log("Watch History Data:", history);
-    
+
     res.status(200).json(history);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -148,7 +164,10 @@ export const deleteWatchHistoryItem = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const result = await VideoView.findOneAndDelete({ user: userId, video: videoId });
+    const result = await VideoView.findOneAndDelete({
+      user: userId,
+      video: videoId,
+    });
 
     if (!result) {
       return res.status(404).json({ message: "Watch history item not found" });
@@ -159,7 +178,6 @@ export const deleteWatchHistoryItem = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 // export const clearWatchHistory1 = async (req, res) => {
 //   try {
@@ -179,7 +197,6 @@ export const deleteWatchHistoryItem = async (req, res) => {
 //   }
 // };
 
-
 export const clearWatchHistory = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -197,5 +214,3 @@ export const clearWatchHistory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-
