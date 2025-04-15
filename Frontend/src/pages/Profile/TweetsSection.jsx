@@ -39,7 +39,13 @@ const TweetsSection = () => {
   const { tweets, tweetsLoading, error } = useSelector((state) => state.tweets);
   const { isAuthenticated } = useSelector((state) => state.auth);
 
-  const { register, handleSubmit, reset, watch } = useForm();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm();
 
   const [editMode, setEditMode] = useState(false); // Track if edit mode is active
   const [tweetToEdit, setTweetToEdit] = useState(null); // Track which tweet is being edited
@@ -202,8 +208,8 @@ const TweetsSection = () => {
             <textarea
               {...register("content", {
                 minLength: {
-                  value: 300,
-                  message: "Add atleast 300 characters",
+                  value: 200,
+                  message: "Add atleast 200 characters",
                 },
                 maxLength: {
                   value: 700,
@@ -214,6 +220,11 @@ const TweetsSection = () => {
               rows="3"
               placeholder="What's on your mind?"
             />
+            {errors.content && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.content.message}
+              </p>
+            )}
 
             {/* Image Upload Preview - Only shows after cropping */}
             {croppedImage && (

@@ -30,6 +30,7 @@ import SearchResults from "./pages/Search/SearchResults";
 import Settings from "./pages/Settings/Settings";
 import ForgetPassword from "./pages/LoginSignup/ForgetPassword";
 import Trending from "./pages/Trending/Trending";
+import ViewsChart from "./pages/Dashboard/ViewChart";
 
 function App() {
   const dispatch = useDispatch();
@@ -90,6 +91,8 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/forget" element={<ForgetPassword />} />
               <Route path="/trending" element={<Trending />} />
+              <Route path="/dashboard" element={<ViewsChart />} />
+              
 
               <Route path="/profile/:username" element={<ProfileLayout />}>
                 <Route index element={<Navigate to="videos" replace />} />

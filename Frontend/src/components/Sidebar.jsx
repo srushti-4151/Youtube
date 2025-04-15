@@ -8,6 +8,7 @@ import {
   AiOutlineVideoCamera,
   AiOutlineSetting,
 } from "react-icons/ai";
+// import { RxDashboard } from "react-icons/rx";
 import { BsCollectionPlay } from "react-icons/bs";
 import { FaRegUserCircle, FaRegQuestionCircle } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
@@ -80,9 +81,9 @@ const Sidebar = () => {
         {/* Bottom Buttons */}
         <ul className="pb-14 space-y-1">
           <SidebarItem
-            to="/support"
+            to="/dashboard"
             icon={<FaRegQuestionCircle />}
-            text="Support"
+            text="Dashboard"
             isOpen={isOpen}
           />
           <SidebarItem

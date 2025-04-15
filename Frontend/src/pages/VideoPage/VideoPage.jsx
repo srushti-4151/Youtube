@@ -7,7 +7,7 @@ import { LuBellRing } from "react-icons/lu";
 import { FaEllipsisH } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { GoBell, GoThumbsup } from "react-icons/go";
-import img from "../../assets/images/img1.jpg";
+import img from "../../assets/images/defaultdp.png";
 import vid1 from "../../assets/images/video1.mp4";
 import { LiaThumbsUpSolid, LiaThumbsDownSolid } from "react-icons/lia";
 import { Link, useParams } from "react-router-dom";
@@ -386,7 +386,7 @@ const VideoPage = () => {
             <div className="flex flex-col items-start justify-between gap-4 mt-4 lg:flex-row">
               <div className="flex items-start gap-3 lg:w-1/2 xl:w-2/3 sm:w-auto">
                 <Link
-                  // href={`/user/${video?.data?.owner.userName}`}
+                  to={`/profile/${userChannelProfile?.username}`}
                   className="flex-shrink-0"
                 >
                   <img
@@ -625,11 +625,13 @@ const VideoPage = () => {
                           key={comment._id}
                           className="flex flex-row px-2 py-4"
                         >
+                          <Link to={`/profile/${comment.owner.username}`}>
                           <img
                             src={comment.owner.avatar}
                             alt="Avatar"
                             className="w-12 h-12 rounded-full"
                           />
+                          </Link>
                           <div className="flex flex-col flex-1 ml-4">
                             <p>
                               <span className="text-[16px]">
