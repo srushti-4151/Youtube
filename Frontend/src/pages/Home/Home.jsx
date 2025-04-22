@@ -30,8 +30,8 @@ const Home = () => {
   );
   const { alltweets } = useSelector((state) => state.tweets);
   const lastContentRef = useRef(null);
-  // console.log("alltweets", alltweets);
-  // console.log("videos alll", videos);
+  console.log("alltweets", alltweets);
+  console.log("videos alll", videos);
 
   useEffect(() => {
     dispatch(fetchAllVideos());

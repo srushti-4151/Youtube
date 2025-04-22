@@ -84,7 +84,7 @@ export const getRecommendedVideos = async (req, res) => {
     );
 
     // ✅ 4. Sort and select top 10
-    const topVideoIds = unseenPredictions
+    const topVideoIds = predictions
       .sort((a, b) => b.score - a.score)
       .slice(0, 10)
       .map((v) => v.videoId);

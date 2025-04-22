@@ -181,39 +181,42 @@ const ViewChart = () => {
           <p className="text-2xl font-bold text-yellow-600">{totalLikes}</p>
         </div>
       </div>
+      {chartData && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 mt-16 md:mt-28">
+            {/* Bar Chart */}
+            <div>
+              <h2 className="text-xl font-semibold text-center mb-2">
+                Engagement Comparison
+              </h2>
+              <Bar data={chartData} options={options} />
+            </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 mt-16 md:mt-28">
-        {/* Bar Chart */}
-        <div>
-          <h2 className="text-xl font-semibold text-center mb-2">
-            Engagement Comparison
-          </h2>
-          <Bar data={chartData} options={options} />
-        </div>
+            {/* Pie Chart */}
+            <div className="max-w-lg mx-auto mt-16 md:mt-0">
+              <h2 className="text-xl font-semibold text-center mb-2">
+                Total Distribution
+              </h2>
+              <Pie data={pieData} />
+            </div>
+          </div>
 
-        {/* Pie Chart */}
-        <div className="max-w-lg mx-auto mt-16 md:mt-0">
-          <h2 className="text-xl font-semibold text-center mb-2">
-            Total Distribution
-          </h2>
-          <Pie data={pieData} />
-        </div>
-      </div>
-
-      {/* Line Chart */}
-      <div className="mt-16 md:mt-28">
-        <h2 className="text-xl font-semibold text-center mb-2">
-          Growth Over Time
-        </h2>
-        <Line data={chartData} options={options} />
-      </div>
+          {/* Line Chart */}
+          <div className="mt-16 md:mt-28">
+            <h2 className="text-xl font-semibold text-center mb-2">
+              Growth Over Time
+            </h2>
+            <Line data={chartData} options={options} />
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
 export default ViewChart;
 
-// // AnalyticsDashboard.jsx
+// AnalyticsDashboard.jsx
 // import React from "react";
 // import { Line, Bar, Pie, Radar } from "react-chartjs-2";
 // import {

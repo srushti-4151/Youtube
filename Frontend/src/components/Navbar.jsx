@@ -41,7 +41,7 @@ const Navbar = () => {
     if (query.trim()) {
       navigate(`/search/${query}`); // Navigate to search results page
     }
-    setquery("")
+    setquery("");
     // dispatch(fetchSearchResults(query)); // Directly call fetchSearchResults
   };
 
@@ -94,55 +94,56 @@ const Navbar = () => {
       setIsListening(false);
       return;
     }
-  
+
     if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
       alert("Your browser does not support voice search.");
       return;
     }
-  
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
     recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
     recognitionRef.current.lang = "en-US";
-  
+
     recognitionRef.current.onstart = () => {
       setIsListening(true);
       setVoiceSearchText("Listening...");
       setVoiceSearchResults([]);
     };
-  
+
     recognitionRef.current.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map((result) => result[0])
         .map((result) => result.transcript)
-        .join('');
-  
+        .join("");
+
       setVoiceSearchText(transcript);
       setquery(transcript); // Update the search query in real-time
-  
+
       if (event.results[0].isFinal) {
-        setVoiceSearchResults(prev => [...prev, transcript]);
+        setVoiceSearchResults((prev) => [...prev, transcript]);
         recognitionRef.current.stop();
         setIsListening(false);
-        
+
         // Automatically trigger search after short delay
         setTimeout(() => {
           navigate(`/search/${transcript}`);
         }, 500); // Small delay to ensure UI updates
       }
     };
-  
+
     recognitionRef.current.onerror = (event) => {
       console.error("Speech recognition error:", event.error);
       setIsListening(false);
       setVoiceSearchText("");
     };
-  
+
     recognitionRef.current.onend = () => {
       setIsListening(false);
     };
-  
+
     recognitionRef.current.start();
   };
 
@@ -529,30 +530,46 @@ const Navbar = () => {
           } transition-transform duration-300 ease-in-out md:hidden`}
         >
           <div className="mt-2 space-y-4">
-            <NavLink
-              to="/login"
-              className={({ isActive }) => `
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="w-full relative py-[9px] px-6 rounded-full font-medium text-[16px] 
+                  text-white bg-gradient-to-r from-[#ff7a7a] to-[#ff4f4f]
+                  shadow-[0_4px_15px_rgba(255,79,79,0.4)]
+                  transition-all duration-300 ease-out
+                  overflow-hidden group z-10 flex items-center justify-center"
+                role="menuitem"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <NavLink
+                  to="/login"
+                  className={({ isActive }) => `
                   relative py-[9px] px-6 rounded-full font-medium text-[16px] 
                   text-white bg-gradient-to-r from-[#ae7aff] to-[#8a4fff]
                   shadow-[0_4px_15px_rgba(174,122,255,0.4)]
                   transition-all duration-300 ease-out
                   overflow-hidden group z-10 flex items-center justify-center
                 `}
-            >
-              Login
-            </NavLink>
-            <NavLink
-              to="/signup"
-              className={({ isActive }) => `
+                >
+                  Login
+                </NavLink>
+                <NavLink
+                  to="/signup"
+                  className={({ isActive }) => `
                   relative py-[9px] px-6 rounded-full font-medium text-[16px] 
                   text-white bg-gradient-to-r from-[#ae7aff] to-[#8a4fff]
                   shadow-[0_4px_15px_rgba(174,122,255,0.4)]
                   transition-all duration-300 ease-out
                   overflow-hidden group z-10 flex items-center justify-center
                 `}
-            >
-              Signup
-            </NavLink>
+                >
+                  Signup
+                </NavLink>
+              </>
+            )}
           </div>
 
           <hr className="my-4" />

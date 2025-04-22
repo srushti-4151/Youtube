@@ -206,7 +206,7 @@ const getAllVideosById = asyncHandler(async (req, res) => {
 
   const {
     page = 1,
-    limit = 50,
+    limit = 200,
     query,
     sortBy = "createdAt",
     sortType = "desc",
@@ -330,7 +330,7 @@ const getAllVideosById = asyncHandler(async (req, res) => {
 const getAllVideosOfUser = asyncHandler(async (req, res) => {
   const {
     page = 1,
-    limit = 10,
+    limit = 100,
     query,
     sortBy = "createdAt",
     sortType = "desc",
@@ -469,7 +469,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 50,
+      limit = 300,
       sortBy = "createdAt",
       sortType = "desc",
     } = req.query;
@@ -921,6 +921,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     }
 
     const response = await Video.findByIdAndDelete(videoId);
+    await deleteFromCloudinary(videoId)
 
     if (!response) {
       throw new ApiError(500, "Failed  To delete");
@@ -936,6 +937,8 @@ const deleteVideo = asyncHandler(async (req, res) => {
     );
   }
 });
+
+
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
