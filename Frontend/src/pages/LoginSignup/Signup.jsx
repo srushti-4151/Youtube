@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  deleteUserThunk,
   loginUser,
   registerUser,
   resendOtpAction,
@@ -27,10 +28,12 @@ const Signup = () => {
   const [showCropper, setShowCropper] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [password, setpassword] = useState("");
+  const [isOtpCancelled, setIsOtpCancelled] = useState(false);
 
   // Convert Base64 to File
   const base64ToFile = (base64String, filename) => {
@@ -72,8 +75,8 @@ const Signup = () => {
 
       // Convert base64 images to blobs before appending
 
-      formData.append("avatar", avatar); // ✅ Real file now!
-      if (coverImage) formData.append("coverImage", coverImage); // ✅ Real file now!
+      formData.append("avatar", avatar); // Real file now!
+      if (coverImage) formData.append("coverImage", coverImage); // Real file now!
 
       console.log("Form Submitted", formData); // Debugging
 
@@ -118,6 +121,7 @@ const Signup = () => {
   const [otpValue, setOtpValue] = useState("");
 
   const verifyOTP = async (otp) => {
+    if (isOtpCancelled) return;
     try {
       const response = await dispatch(
         verifyUserOtp({
@@ -152,6 +156,7 @@ const Signup = () => {
   const resendOTP = async () => {
     try {
       setIsResending(true);
+      setIsOtpCancelled(false);
       const response = await dispatch(
         resendOtpAction(registeredEmail)
       ).unwrap();
@@ -166,6 +171,19 @@ const Signup = () => {
     }
   };
 
+  const handleCancelOTP = async () => {
+    try {
+      console.log("deleteing this emaail", registeredEmail)
+      setIsDeleting(true);
+      await dispatch(deleteUserThunk({ email: registeredEmail })).unwrap();
+      handleSuccess("Registration cancelled.");
+    } catch (error) {
+      handleError(error.message || "Failed to cancel. Contact support.");
+    } finally {
+      setIsDeleting(false);
+      setShowOTPModal(false);
+    }
+  };
   return (
     <div className="flex justify-center items-center p-6 dark:bg-black dark:text-white text-black bg-white rounded-lg">
       {/* OTP Verification Modal */}
@@ -193,10 +211,18 @@ const Signup = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setShowOTPModal(false)}
+                // onClick={() => {
+                //   setIsOtpCancelled(true);
+                //   setShowOTPModal(false);
+                //   setOtpValue("");
+                //   setRegisteredEmail(""); // Clear sensitive data
+                //   setpassword(""); // Clear sensitive data
+                // }}
+                onClick={handleCancelOTP}
+                disabled={isDeleting}
                 className="bg-gray-500 text-white px-4 py-2 rounded"
               >
-                Cancel
+               {isDeleting ? "Cancelling..." : "Cancel"}
               </button>
             </div>
 
@@ -382,7 +408,7 @@ const Signup = () => {
             <img
               src={coverImagePreview}
               alt="Cover preview"
-              className="mt-2 w-full h-32 rounded"
+              className="mt-2 w-full aspect-video rounded"
             />
           )}
         </div>

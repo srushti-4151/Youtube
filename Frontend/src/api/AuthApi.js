@@ -176,7 +176,7 @@ export const logout = async () => {
 };
 
 
-// ✅ Send OTP for password reset
+// Send OTP for password reset
 export const sendResetOtp = async (email) => {
   try {
     const response = await axios.post(`${API_URL}/send-reset-otp`, { email });
@@ -186,7 +186,7 @@ export const sendResetOtp = async (email) => {
   }
 };
 
-// ✅ Verify OTP
+// Verify OTP
 export const verifyResetOtp = async (email, otp) => {
   try {
     const response = await axios.post(`${API_URL}/verify-reset-otp`, { email, otp });
@@ -196,7 +196,7 @@ export const verifyResetOtp = async (email, otp) => {
   }
 };
 
-// ✅ Reset Password
+// Reset Password
 export const resetPassword = async (email, newPassword) => {
   try {
     const response = await axios.post(`${API_URL}/reset-password`, { email, newPassword });
@@ -292,6 +292,20 @@ export const updateUserAccountDetails = async (accountData) => {
     return {
       success: false,
       message: error.response?.data?.message || "Failed to update account details",
+    };
+  }
+};
+
+
+export const deleteuser = async (email) => {
+  try {
+    const response = await axios.post(`${API_URL}/deleteuser`, email);
+    console.log("deleted user response",response.data);
+    return response.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "An error occurred",
     };
   }
 };

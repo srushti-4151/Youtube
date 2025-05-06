@@ -11,6 +11,7 @@ import { FiMoreVertical } from "react-icons/fi";
 import { handleSuccess } from "../../utils/toast.js";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
+import DefPlay from "../../assets/images/DefPlay.png"
 
 const PlaylistSection = () => {
   const outletContext = useOutletContext();
@@ -155,7 +156,7 @@ const PlaylistSection = () => {
       ) : playlists.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {playlists.map((playlist) => {
-            const firstVideoThumbnail = playlist.videos?.[0]?.thumbnail;
+            const firstVideoThumbnail = playlist.videos?.[0]?.thumbnail || DefPlay;
 
             return (
               <div

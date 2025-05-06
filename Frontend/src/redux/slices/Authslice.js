@@ -64,6 +64,7 @@ import {
   resetPassword,
   verifyResetOtp,
   sendResetOtp,
+  deleteuser,
 } from "../../api/AuthApi.js";
 
 export const refreshAuthToken = createAsyncThunk(
@@ -226,7 +227,7 @@ export const updateAccountDetails = createAsyncThunk(
 );
 
 
-// ✅ Thunks for async actions
+// Thunks for async actions
 export const sendOtpThunk = createAsyncThunk("auth/sendOtp", async (email, { rejectWithValue }) => {
   try {
     return await sendResetOtp(email);
@@ -250,6 +251,15 @@ export const resetPasswordThunk = createAsyncThunk("auth/resetPassword", async (
     return rejectWithValue(error);
   }
 });
+
+export const deleteUserThunk = createAsyncThunk(
+  "auth/deleteuser",
+  async (email, thunkAPI) => {
+    const response = await deleteuser(email); // Calls the API function
+    if (!response.success) return thunkAPI.rejectWithValue(response.message); // If error, send it to Redux state
+    return response; // Otherwise, return the user data to store it in Redux state
+  }
+);
 
 const initialState = {
   isAuthenticated: false,

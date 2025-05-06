@@ -22,7 +22,26 @@ import bcrypt from "bcrypt";
 // -If valid: Generate a new Access Token and send it to the frontend.
 // -If invalid/expired: Reject the request (user must log in again).
 // 7. The frontend saves the new Access Token and retries the original request
+// In `user.controller.js`
+export const deleteUnverifiedUser = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOneAndDelete({ 
+    email,
+    isAccountVerified: false // Only delete if unverified
+  });
 
+  if (!user) {
+    throw new ApiError(404, "User not found or already verified");
+  }
+
+  // Cleanup: Delete avatar/coverImage from Cloudinary
+  if (user.avatar) await deleteFromCloudinary(user.avatar);
+  if (user.coverImage) await deleteFromCloudinary(user.coverImage);
+
+  return res.status(200).json(
+    new ApiResponse(200, {}, "Unverified user deleted")
+  );
+});
 export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;

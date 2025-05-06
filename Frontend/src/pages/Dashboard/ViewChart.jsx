@@ -167,17 +167,17 @@ const ViewChart = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
         <div className="bg-blue-100 p-4 rounded-xl shadow-md">
-          <h3 className="text-lg font-semibold">Total Views</h3>
+          <h3 className="text-lg font-semibold dark:text-black">Total Views</h3>
           <p className="text-2xl font-bold text-blue-600">{totalViews}</p>
         </div>
         <div className="bg-purple-100 p-4 rounded-xl shadow-md">
-          <h3 className="text-lg font-semibold">Total Subscribers</h3>
+          <h3 className="text-lg font-semibold dark:text-black">Total Subscribers</h3>
           <p className="text-2xl font-bold text-purple-600">
             {totalSubscribers}
           </p>
         </div>
         <div className="bg-yellow-100 p-4 rounded-xl shadow-md">
-          <h3 className="text-lg font-semibold">Total Likes</h3>
+          <h3 className="text-lg font-semibold dark:text-black">Total Likes</h3>
           <p className="text-2xl font-bold text-yellow-600">{totalLikes}</p>
         </div>
       </div>
