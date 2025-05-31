@@ -304,6 +304,7 @@ const loginUser = asyncHandler(async (req, res) => {
     httpOnly: true, // // Prevents JavaScript access only server(backend) can modify
     secure: true,// Sends only over HTTPS
     sameSite: "None",
+    maxAge: 10 * 24 * 60 * 60 * 1000,
   };
 
   // Only refreshToken is stored in a cookie (httpOnly, secure)
